@@ -2,7 +2,7 @@ mod rom;
 mod memory;
 mod cpu;
 mod instruction;
-mod opcodes;
+mod math;
 
 use rom::Rom;
 use memory::Memory;
@@ -39,9 +39,5 @@ fn main() {
         cpu.print_state();
 
         cycle += 1;
-
-        if cycle > 10 {
-            break;
-        }
     }
 }
