@@ -2,6 +2,7 @@ mod rom;
 mod memory;
 mod cpu;
 mod instruction;
+mod opcodes;
 
 use rom::Rom;
 use memory::Memory;
@@ -40,7 +41,7 @@ fn main() {
         cycle += 1;
 
         if cycle > 10 {
-            break
+            break;
         }
     }
 }
