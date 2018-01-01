@@ -8,9 +8,9 @@ use rom::Rom;
 use memory::Memory;
 use cpu::Cpu;
 
-fn main() {
-    println!("Hello, world!");
+use std::io::{stdin, Read};
 
+fn main() {
     let cartridge: Rom = Rom::load("tetris.gb").unwrap();
 
     println!("Loaded rom: {:?}", cartridge.game_title);
@@ -20,24 +20,24 @@ fn main() {
         return;
     }
 
-    // Setup
     let mut memory: Memory = Memory::new(cartridge);
-
     let mut cpu: Cpu = Cpu::new();
+    //let mut Gpu: Gpu = Gpu::new();
 
-    // Start
-
-    let mut cycle: u64 = 0;
+    let mut steps: u64 = 0;
+    let mut cycles: u64 = 0;
     loop {
-        cpu.cycle(&mut memory);
+        //gpu.cycle(&mut memory, cycles);
 
         // read input
-
         // if should quit: break loop
 
-        println!("Cpu State after {} cycles", cycle);
+        cycles += cpu.cycle(&mut memory) as u64;
+        println!("Cpu State after {} steps {} cycles", steps, cycles);
         cpu.print_state();
 
-        cycle += 1;
+        //let _ = stdin().read(&mut [0u8]).unwrap();
+
+        steps += 1;
     }
 }

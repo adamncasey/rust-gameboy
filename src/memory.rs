@@ -37,8 +37,12 @@ impl Memory {
     }
 
     pub fn get16(&self, addr: u16) -> u16 {
-        let high: u16 = self.get(addr) as u16;
-        let low: u8 = self.get(addr + 1);
+        self.get16_be(addr)
+    }
+
+    pub fn get16_be(&self, addr: u16) -> u16 {
+        let low: u8 = self.get(addr);
+        let high: u16 = self.get(addr + 1) as u16;
 
         return (high << 8) + (low as u16);
     }
@@ -47,14 +51,16 @@ impl Memory {
         let low = val & 0x00FF;
         let high = (val & 0xFF00) >> 8;
 
-        self.set(addr + 1, low as u8);
-        self.set(addr, high as u8);
+        self.set(addr, low as u8);
+        self.set(addr + 1, high as u8);
     }
 
     fn mmu_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
             0x0000...0x7FFF => &mut self.cartridge[addr as usize],
             0x8000...0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
+            0xC000...0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
+            0xFF00...0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
             0xFF80...0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }
@@ -64,6 +70,8 @@ impl Memory {
         match addr {
             0x0000...0x7FFF => &self.cartridge[addr as usize],
             0x8000...0x9FFF => &self.vram[(addr - 0x8000) as usize],
+            0xC000...0xDFFF => &self.ram[(addr - 0xC000) as usize],
+            0xFF00...0xFF4B => &self.io[(addr - 0xFF00) as usize],
             0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }

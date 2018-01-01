@@ -13,6 +13,8 @@ pub struct Cpu {
     pub f: u8,
     pub h: u8,
     pub l: u8,
+
+    jumped: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -41,25 +43,39 @@ impl Cpu {
         Cpu {
             pc: 0x0100,
             sp: 0xFFFE,
-            a: 0x00,
+            a: 0x01,
             b: 0x00,
-            c: 0,
-            d: 0,
-            e: 0,
-            f: 0,
-            h: 0,
-            l: 0,
+            c: 0x13,
+            d: 0x00,
+            e: 0xD8,
+            f: 0xB0,
+            h: 0x01,
+            l: 0x4D,
+            jumped: false,
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory) {
+    pub fn cycle(&mut self, mem: &mut Memory) -> u8 {
         let instr = Instruction::read(&mem, self.pc);
 
-        println!("Executing {:?}", instr);
+        println!(
+            "Executing |{:X}|{:X}|{:X}| {:?}",
+            mem.get(self.pc),
+            mem.get(self.pc + 1),
+            mem.get(self.pc + 2),
+            instr
+        );
 
-        instr.execute(self, mem);
+        let cycles = instr.execute(self, mem);
 
-        self.pc += Instruction::mem_size(&instr);
+        // If we jumped we shouldn't skip over current instr
+        if !self.jumped {
+            self.pc += Instruction::mem_size(&instr);
+        }
+
+        self.jumped = false;
+
+        return cycles;
     }
 
     pub fn set(&mut self, reg: CpuRegister, val: u8) {
@@ -107,8 +123,8 @@ impl Cpu {
                 self.e = low;
             }
             Cpu16Register::HL => {
-                self.b = high;
-                self.c = low;
+                self.h = high;
+                self.l = low;
             }
         }
     }
@@ -133,8 +149,8 @@ impl Cpu {
                 low = self.e;
             }
             Cpu16Register::HL => {
-                high = self.b as u16;
-                low = self.c;
+                high = self.h as u16;
+                low = self.l;
             }
         };
 
@@ -147,6 +163,19 @@ impl Cpu {
 
     pub fn c_flag(&self) -> u8 {
         (self.f & (1 << 4)) >> 4
+    }
+    pub fn z_flag(&self) -> bool {
+        (self.f & (1 << 7)) != 0
+    }
+
+    pub fn jump(&mut self, addr: u16) {
+        self.pc = addr;
+        self.jumped = true;
+    }
+
+    pub fn rjump(&mut self, offset: i8) {
+        self.pc = ((self.pc as i32) + (offset as i32)) as u16;
+        self.jumped = true;
     }
 
     pub fn print_state(&self) {
