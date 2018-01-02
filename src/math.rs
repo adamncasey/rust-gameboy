@@ -10,9 +10,18 @@ pub fn subtract(cpu: &mut Cpu, val: u8) {
     let c = false;
 
     cpu.set_flags(z, true, h, c);
+}
 
-    // Flag N = 1
-    // Flags Z, H, C
+pub fn add(cpu: &mut Cpu, val: u8) {
+    let lhs: u8 = cpu.get(CpuRegister::A);
+
+    let result: u8 = lhs.wrapping_add(val);
+
+    let z = result == 0;
+    let h = false;
+    let c = false;
+
+    cpu.set_flags(z, true, h, c);
 }
 
 pub fn increment(cpu: &mut Cpu, reg: CpuRegister) {
@@ -72,10 +81,24 @@ pub fn complement(cpu: &mut Cpu) {
     cpu.a = !cpu.a;
 }
 
-pub fn xor(cpu: &mut Cpu, reg: CpuRegister) {
-    let val: u8 = cpu.get(reg);
-
+pub fn xor(cpu: &mut Cpu, val: u8) {
     let result: u8 = cpu.get(CpuRegister::A) ^ val;
+
+    cpu.a = result;
+
+    cpu.set_flags(result == 0, false, false, false);
+}
+
+pub fn or(cpu: &mut Cpu, val: u8) {
+    let result: u8 = cpu.get(CpuRegister::A) | val;
+
+    cpu.a = result;
+
+    cpu.set_flags(result == 0, false, false, false);
+}
+
+pub fn and(cpu: &mut Cpu, val: u8) {
+    let result: u8 = cpu.get(CpuRegister::A) & val;
 
     cpu.a = result;
 

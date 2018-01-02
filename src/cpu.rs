@@ -14,12 +14,13 @@ pub struct Cpu {
     pub h: u8,
     pub l: u8,
 
+    interrupts: bool,
+
     jumped: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cpu16Register {
-    PC,
     SP,
     BC,
     DE,
@@ -33,7 +34,6 @@ pub enum CpuRegister {
     C,
     D,
     E,
-    F,
     H,
     L,
 }
@@ -51,20 +51,23 @@ impl Cpu {
             f: 0xB0,
             h: 0x01,
             l: 0x4D,
+            interrupts: false, // TODO start value?
             jumped: false,
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory) -> u8 {
+    pub fn cycle(&mut self, mem: &mut Memory, debug: bool) -> u8 {
         let instr = Instruction::read(&mem, self.pc);
 
-        println!(
-            "Executing |{:X}|{:X}|{:X}| {:?}",
-            mem.get(self.pc),
-            mem.get(self.pc + 1),
-            mem.get(self.pc + 2),
-            instr
-        );
+        if debug {
+            println!(
+                "Executing |{:X}|{:X}|{:X}| {:?}",
+                mem.get(self.pc),
+                mem.get(self.pc + 1),
+                mem.get(self.pc + 2),
+                instr
+            );
+        }
 
         let cycles = instr.execute(self, mem);
 
@@ -85,7 +88,6 @@ impl Cpu {
             CpuRegister::C => self.c = val,
             CpuRegister::D => self.d = val,
             CpuRegister::E => self.e = val,
-            CpuRegister::F => self.f = val,
             CpuRegister::H => self.h = val,
             CpuRegister::L => self.l = val,
         }
@@ -97,7 +99,6 @@ impl Cpu {
             CpuRegister::C => self.c,
             CpuRegister::D => self.d,
             CpuRegister::E => self.e,
-            CpuRegister::F => self.f,
             CpuRegister::H => self.h,
             CpuRegister::L => self.l,
         }
@@ -108,9 +109,6 @@ impl Cpu {
         let high: u8 = ((val & 0xFF00) >> 8) as u8;
 
         match reg {
-            Cpu16Register::PC => {
-                self.pc = val;
-            }
             Cpu16Register::SP => {
                 self.sp = val;
             }
@@ -134,9 +132,6 @@ impl Cpu {
         let high: u16; // = ((val & 0xFF00) >> 8) as u8;
 
         match reg {
-            Cpu16Register::PC => {
-                return self.pc;
-            }
             Cpu16Register::SP => {
                 return self.sp;
             }
@@ -176,6 +171,21 @@ impl Cpu {
     pub fn rjump(&mut self, offset: i8) {
         self.pc = ((self.pc as i32) + (offset as i32)) as u16;
         self.jumped = true;
+    }
+
+    pub fn ret(&mut self, mem: &Memory) {
+        let newpc = mem.get16(self.sp);
+
+        self.sp += 2;
+        self.jump(newpc);
+    }
+
+    pub fn enable_interrupts(&mut self) {
+        self.interrupts = true;
+    }
+
+    pub fn disable_interrupts(&mut self) {
+        self.interrupts = true;
     }
 
     pub fn print_state(&self) {

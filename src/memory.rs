@@ -7,11 +7,13 @@ pub struct Memory {
     sprite: Vec<u8>,
     io: Vec<u8>,
     highram: Vec<u8>,
+
+    unused: u8,
 }
 
 const VRAM_SIZE: usize = 8 * 1024;
 const RAM_SIZE: usize = 8 * 1024;
-const SPRITE_SIZE: usize = 154;
+const SPRITE_SIZE: usize = 160;
 const IO_SIZE: usize = 76;
 const HIGHRAM_SIZE: usize = 128;
 
@@ -25,6 +27,8 @@ impl Memory {
             sprite: vec![0; SPRITE_SIZE],
             io: vec![0; IO_SIZE],
             highram: vec![0; HIGHRAM_SIZE],
+
+            unused: 0,
         }
     }
 
@@ -60,7 +64,11 @@ impl Memory {
             0x0000...0x7FFF => &mut self.cartridge[addr as usize],
             0x8000...0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
             0xC000...0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
+            0xE000...0xFDFF => &mut self.ram[(addr - 0xE000) as usize],
+            0xFE00...0xFE9F => &mut self.sprite[(addr - 0xFE00) as usize],
+            0xFEA0...0xFEFF => &mut self.unused,
             0xFF00...0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
+            0xFF4C...0xFF7F => &mut self.unused,
             0xFF80...0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }
@@ -71,7 +79,11 @@ impl Memory {
             0x0000...0x7FFF => &self.cartridge[addr as usize],
             0x8000...0x9FFF => &self.vram[(addr - 0x8000) as usize],
             0xC000...0xDFFF => &self.ram[(addr - 0xC000) as usize],
+            0xE000...0xFDFF => &self.ram[(addr - 0xE000) as usize],
+            0xFE00...0xFE9F => &self.sprite[(addr - 0xFE00) as usize],
+            0xFEA0...0xFEFF => &self.unused,
             0xFF00...0xFF4B => &self.io[(addr - 0xFF00) as usize],
+            0xFF4C...0xFF7F => &self.unused,
             0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }

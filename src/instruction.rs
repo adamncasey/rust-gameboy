@@ -12,24 +12,39 @@ pub enum Instruction {
         src_addr: Cpu16Register,
         dst: CpuRegister,
     },
-    LDD,
     LDHA { addr: u8 },
+    LDHCA,
+    LDD,
+    LDI,
     JP { addr: u16 },
     JR { offset: i8 },
     JRNZ { offset: i8 },
     CALL { addr: u16 },
-    RST18,
+    RET,
+    RETNZ,
+    RETZ,
+    RETNC,
+    RETC,
+    RETI,
+    RST { addr: u16 },
     STA8 {
         dst_addr: Cpu16Register,
         src: CpuRegister,
     },
     STI8 { dst_addr: Cpu16Register, val: u8 },
     STHA { addr: u8 },
+    STHCA,
+    STAA { addr: u16 },
+    STD,
     SUBR { reg: CpuRegister },
     SUBA { reg_addr: Cpu16Register },
+    SUBI { val: u8 },
     SBCR { reg: CpuRegister },
     SBCA { reg_addr: Cpu16Register },
+    ADDI { val: u8 },
     XORR { reg: CpuRegister },
+    XORA,
+    XORI { val: u8 },
     INC { reg: CpuRegister },
     DEC { reg: CpuRegister },
     INC16 { reg: Cpu16Register },
@@ -40,6 +55,12 @@ pub enum Instruction {
     CMPR { reg: CpuRegister },
     CMPI { val: u8 },
     CMPA,
+    ORR { reg: CpuRegister },
+    ORA,
+    ORI { val: u8 },
+    ANDR { reg: CpuRegister },
+    ANDA,
+    ANDI { val: u8 },
 }
 
 impl Instruction {
@@ -60,21 +81,36 @@ impl Instruction {
             Instruction::LDI8 { .. } => 2,
             Instruction::LDR8 { .. } => 1,
             Instruction::LDA8 { .. } => 1,
-            Instruction::LDD => 1,
             Instruction::LDHA { .. } => 2,
+            Instruction::LDHCA => 1,
+            Instruction::LDD { .. } => 1,
+            Instruction::LDI { .. } => 1,
             Instruction::JP { .. } => 3,
             Instruction::JR { .. } => 2,
             Instruction::JRNZ { .. } => 2,
             Instruction::CALL { .. } => 3,
-            Instruction::RST18 => 1,
+            Instruction::RET => 1,
+            Instruction::RETNZ => 1,
+            Instruction::RETZ => 1,
+            Instruction::RETNC => 1,
+            Instruction::RETC => 1,
+            Instruction::RETI => 1,
+            Instruction::RST { .. } => 1,
             Instruction::STA8 { .. } => 1,
             Instruction::STI8 { .. } => 2,
             Instruction::STHA { .. } => 2,
+            Instruction::STHCA => 1,
+            Instruction::STAA { .. } => 3,
+            Instruction::STD => 1,
             Instruction::SUBR { .. } => 1,
             Instruction::SUBA { .. } => 1,
+            Instruction::SUBI { .. } => 2,
             Instruction::SBCR { .. } => 1,
             Instruction::SBCA { .. } => 1,
+            Instruction::ADDI { .. } => 2,
             Instruction::XORR { .. } => 1,
+            Instruction::XORA => 1,
+            Instruction::XORI { .. } => 2,
             Instruction::INC { .. } => 1,
             Instruction::DEC { .. } => 1,
             Instruction::INC16 { .. } => 1,
@@ -85,6 +121,12 @@ impl Instruction {
             Instruction::CMPR { .. } => 1,
             Instruction::CMPA => 1,
             Instruction::CMPI { .. } => 2,
+            Instruction::ORR { .. } => 1,
+            Instruction::ORA => 1,
+            Instruction::ORI { .. } => 2,
+            Instruction::ANDR { .. } => 1,
+            Instruction::ANDA => 1,
+            Instruction::ANDI { .. } => 2,
         }
     }
 
@@ -111,15 +153,26 @@ impl Instruction {
                 cpu.set(dst, mem.get(addr));
                 cycles = 8;
             }
-            Instruction::LDD => {
-                let addr: u16 = cpu.get16(Cpu16Register::HL);
-                mem.set(addr, cpu.get(CpuRegister::A));
-                cpu.set16(Cpu16Register::HL, addr - 1);
-                cycles = 8;
-            }
             Instruction::LDHA { addr } => {
                 cpu.set(CpuRegister::A, mem.get(0xFF00 + (addr as u16)));
                 cycles = 12;
+            }
+            Instruction::LDHCA => {
+                let addr: u16 = cpu.get(CpuRegister::C) as u16;
+                cpu.set(CpuRegister::A, mem.get(0xFF00 + addr));
+                cycles = 8;
+            }
+            Instruction::LDD => {
+                let addr: u16 = cpu.get16(Cpu16Register::HL);
+                cpu.set(CpuRegister::A, mem.get(addr));
+                cpu.set16(Cpu16Register::HL, addr - 1);
+                cycles = 8;
+            }
+            Instruction::LDI => {
+                let addr: u16 = cpu.get16(Cpu16Register::HL);
+                cpu.set(CpuRegister::A, mem.get(addr));
+                cpu.set16(Cpu16Register::HL, addr + 1);
+                cycles = 8;
             }
             Instruction::JP { addr } => {
                 cpu.jump(addr);
@@ -141,11 +194,44 @@ impl Instruction {
                 cpu.jump(addr);
                 cycles = 24;
             }
-            Instruction::RST18 => {
-                // Store next pc on stack & jump to 0x0018
+            Instruction::RET => {
+                cpu.ret(mem);
+                cycles = 16;
+            }
+            Instruction::RETNZ => if !cpu.z_flag() {
+                cpu.ret(mem);
+                cycles = 20;
+            } else {
+                cycles = 8;
+            },
+            Instruction::RETZ => if cpu.z_flag() {
+                cpu.ret(mem);
+                cycles = 20;
+            } else {
+                cycles = 8;
+            },
+            Instruction::RETNC => if cpu.c_flag() == 1 {
+                cpu.ret(mem);
+                cycles = 20;
+            } else {
+                cycles = 8;
+            },
+            Instruction::RETC => if cpu.c_flag() == 0 {
+                cpu.ret(mem);
+                cycles = 20;
+            } else {
+                cycles = 8;
+            },
+            Instruction::RETI => {
+                cpu.ret(mem);
+                cpu.enable_interrupts();
+                cycles = 16;
+            }
+            Instruction::RST { addr } => {
+                // Store next pc on stack & jump to addr
                 mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.sp -= 2;
-                cpu.jump(0x0018);
+                cpu.jump(addr);
                 cycles = 16;
             }
             Instruction::STA8 { dst_addr, src } => {
@@ -157,8 +243,23 @@ impl Instruction {
                 mem.set((0xFF00 + addr as u16) as u16, cpu.get(CpuRegister::A));
                 cycles = 12;
             }
+            Instruction::STHCA => {
+                let addr: u16 = cpu.get(CpuRegister::C) as u16;
+                mem.set(0xFF00 + addr, cpu.get(CpuRegister::A));
+                cycles = 8;
+            }
             Instruction::STI8 { dst_addr, val } => {
                 mem.set(cpu.get16(dst_addr), val);
+                cycles = 8;
+            }
+            Instruction::STAA { addr } => {
+                mem.set(addr, cpu.get(CpuRegister::A));
+                cycles = 16;
+            }
+            Instruction::STD => {
+                let addr: u16 = cpu.get16(Cpu16Register::HL);
+                mem.set(addr, cpu.get(CpuRegister::A));
+                cpu.set16(Cpu16Register::HL, addr - 1);
                 cycles = 8;
             }
             Instruction::SUBR { reg } => {
@@ -168,6 +269,10 @@ impl Instruction {
             }
             Instruction::SUBA { reg_addr } => {
                 let val: u8 = mem.get(cpu.get16(reg_addr));
+                math::subtract(cpu, val);
+                cycles = 8;
+            }
+            Instruction::SUBI { val } => {
                 math::subtract(cpu, val);
                 cycles = 8;
             }
@@ -181,9 +286,23 @@ impl Instruction {
                 math::subtract(cpu, val);
                 cycles = 8;
             }
+            Instruction::ADDI { val } => {
+                math::add(cpu, val);
+                cycles = 8;
+            }
             Instruction::XORR { reg } => {
-                math::xor(cpu, reg);
+                let val: u8 = cpu.get(reg);
+                math::xor(cpu, val);
                 cycles = 4;
+            }
+            Instruction::XORA => {
+                let addr: u16 = cpu.get16(Cpu16Register::HL);
+                math::xor(cpu, mem.get(addr));
+                cycles = 8;
+            }
+            Instruction::XORI { val } => {
+                math::xor(cpu, val);
+                cycles = 8;
             }
             Instruction::INC { reg } => {
                 math::increment(cpu, reg);
@@ -205,8 +324,14 @@ impl Instruction {
                 math::complement(cpu);
                 cycles = 4;
             }
-            Instruction::DI => cycles = 4, // TODO Disable interrupts
-            Instruction::EI => cycles = 4, // TODO Enable interrupts
+            Instruction::DI => {
+                cpu.disable_interrupts();
+                cycles = 4;
+            }
+            Instruction::EI => {
+                cpu.enable_interrupts();
+                cycles = 4;
+            }
             Instruction::CMPI { val } => {
                 math::compare(cpu, val);
                 cycles = 8;
@@ -219,6 +344,34 @@ impl Instruction {
             Instruction::CMPA => {
                 let addr: u16 = cpu.get16(Cpu16Register::HL);
                 math::compare(cpu, mem.get(addr));
+                cycles = 8;
+            }
+            Instruction::ORR { reg } => {
+                let val: u8 = cpu.get(reg);
+                math::or(cpu, val);
+                cycles = 4;
+            }
+            Instruction::ORA => {
+                let addr: u16 = cpu.get16(Cpu16Register::HL);
+                math::or(cpu, mem.get(addr));
+                cycles = 8;
+            }
+            Instruction::ORI { val } => {
+                math::or(cpu, val);
+                cycles = 8;
+            }
+            Instruction::ANDR { reg } => {
+                let val: u8 = cpu.get(reg);
+                math::and(cpu, val);
+                cycles = 4;
+            }
+            Instruction::ANDA => {
+                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL));
+                math::and(cpu, val);
+                cycles = 8;
+            }
+            Instruction::ANDI { val } => {
+                math::and(cpu, val);
                 cycles = 8;
             }
         };
@@ -250,6 +403,9 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x06 => Instruction::LDI8 {
             val: mem.get(argstart),
             reg: CpuRegister::B,
+        },
+        0x0B => Instruction::DEC16 {
+            reg: Cpu16Register::BC,
         },
         0x0C => Instruction::INC {
             reg: CpuRegister::C,
@@ -285,6 +441,9 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x18 => Instruction::JR {
             offset: mem.get(argstart) as i8,
         },
+        0x1B => Instruction::DEC16 {
+            reg: Cpu16Register::DE,
+        },
         0x1C => Instruction::INC {
             reg: CpuRegister::E,
         },
@@ -315,6 +474,10 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::H,
         },
+        0x2A => Instruction::LDI,
+        0x2B => Instruction::DEC16 {
+            reg: Cpu16Register::HL,
+        },
         0x2C => Instruction::INC {
             reg: CpuRegister::L,
         },
@@ -330,13 +493,17 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get16(argstart),
             reg: Cpu16Register::SP,
         },
-        0x32 => Instruction::LDD,
+        0x32 => Instruction::STD,
         0x33 => Instruction::INC16 {
             reg: Cpu16Register::SP,
         },
         0x36 => Instruction::STI8 {
             dst_addr: Cpu16Register::HL,
             val: mem.get(argstart),
+        },
+        0x3A => Instruction::LDD,
+        0x3B => Instruction::DEC16 {
+            reg: Cpu16Register::SP,
         },
         0x3C => Instruction::INC {
             reg: CpuRegister::A,
@@ -649,6 +816,14 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x9F => Instruction::SBCR {
             reg: CpuRegister::A,
         },
+        0xA0 => Instruction::ANDR { reg: CpuRegister::B },
+        0xA1 => Instruction::ANDR { reg: CpuRegister::C },
+        0xA2 => Instruction::ANDR { reg: CpuRegister::D },
+        0xA3 => Instruction::ANDR { reg: CpuRegister::E },
+        0xA4 => Instruction::ANDR { reg: CpuRegister::H },
+        0xA5 => Instruction::ANDR { reg: CpuRegister::L },
+        0xA6 => Instruction::ANDA,
+        0xA7 => Instruction::ANDR { reg: CpuRegister::A },
         0xA8 => Instruction::XORR {
             reg: CpuRegister::B,
         },
@@ -667,7 +842,30 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xAD => Instruction::XORR {
             reg: CpuRegister::L,
         },
+        0xAE => Instruction::XORA,
         0xAF => Instruction::XORR {
+            reg: CpuRegister::A,
+        },
+        0xB0 => Instruction::ORR {
+            reg: CpuRegister::B,
+        },
+        0xB1 => Instruction::ORR {
+            reg: CpuRegister::C,
+        },
+        0xB2 => Instruction::ORR {
+            reg: CpuRegister::D,
+        },
+        0xB3 => Instruction::ORR {
+            reg: CpuRegister::E,
+        },
+        0xB4 => Instruction::ORR {
+            reg: CpuRegister::H,
+        },
+        0xB5 => Instruction::ORR {
+            reg: CpuRegister::L,
+        },
+        0xB6 => Instruction::ORA,
+        0xB7 => Instruction::ORR {
             reg: CpuRegister::A,
         },
         0xB8 => Instruction::CMPR {
@@ -692,24 +890,57 @@ fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xBF => Instruction::CMPR {
             reg: CpuRegister::A,
         },
+        0xC0 => Instruction::RETNZ,
         0xC3 => Instruction::JP {
             addr: mem.get16_be(argstart),
         },
+        0xC6 => Instruction::ADDI {
+            val: mem.get(argstart),
+        },
+        0xC7 => Instruction::RST { addr: 0x0000 },
+        0xC8 => Instruction::RETZ,
+        0xC9 => Instruction::RET,
         0xCD => Instruction::CALL {
             addr: mem.get16_be(argstart),
         },
-        0xDF => Instruction::RST18,
+        0xCF => Instruction::RST { addr: 0x0008 },
+        0xD0 => Instruction::RETNC,
+        0xD6 => Instruction::SUBI {
+            val: mem.get(argstart),
+        },
+        0xD7 => Instruction::RST { addr: 0x0010 },
+        0xD8 => Instruction::RETC,
+        0xD9 => Instruction::RETI,
+        0xDF => Instruction::RST { addr: 0x0018 },
         0xE0 => Instruction::STHA {
             addr: mem.get(argstart),
+        },
+        0xE2 => Instruction::STHCA,
+        0xE6 => Instruction::ANDI {
+            val: mem.get(argstart),
+        },
+        0xE7 => Instruction::RST { addr: 0x0020 },
+        0xEF => Instruction::RST { addr: 0x0028 },
+        0xEA => Instruction::STAA {
+            addr: mem.get16_be(argstart),
+        },
+        0xEE => Instruction::XORI {
+            val: mem.get(argstart),
         },
         0xF0 => Instruction::LDHA {
             addr: mem.get(argstart),
         },
+        0xF2 => Instruction::LDHCA,
         0xF3 => Instruction::DI,
+        0xF6 => Instruction::ORI {
+            val: mem.get(argstart),
+        },
+        0xF7 => Instruction::RST { addr: 0x0030 },
         0xFB => Instruction::EI,
         0xFE => Instruction::CMPI {
             val: mem.get(argstart),
         },
+        0xFF => Instruction::RST { addr: 0x0038 },
         _ => panic!("Unknown opcode {:2X}", opcode),
     }
 }
