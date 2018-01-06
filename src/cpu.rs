@@ -25,6 +25,7 @@ pub enum Cpu16Register {
     BC,
     DE,
     HL,
+    AF,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -61,7 +62,7 @@ impl Cpu {
 
         if debug {
             println!(
-                "Executing |{:X}|{:X}|{:X}| {:?}",
+                "--- Executing |{:X}|{:X}|{:X}| {:?}",
                 mem.get(self.pc),
                 mem.get(self.pc + 1),
                 mem.get(self.pc + 2),
@@ -124,6 +125,10 @@ impl Cpu {
                 self.h = high;
                 self.l = low;
             }
+            Cpu16Register::AF => {
+                self.a = high;
+                self.f = low;
+            }
         }
     }
 
@@ -146,6 +151,10 @@ impl Cpu {
             Cpu16Register::HL => {
                 high = self.h as u16;
                 low = self.l;
+            }
+            Cpu16Register::AF => {
+                high = self.a as u16;
+                low = self.f;
             }
         };
 
@@ -174,9 +183,10 @@ impl Cpu {
     }
 
     pub fn ret(&mut self, mem: &Memory) {
-        let newpc = mem.get16(self.sp);
+        let sp = self.sp.wrapping_add(2);
+        let newpc = mem.get16(sp);
 
-        self.sp += 2;
+        self.sp = sp;
         self.jump(newpc);
     }
 

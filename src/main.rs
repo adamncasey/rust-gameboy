@@ -10,7 +10,9 @@ use memory::Memory;
 use cpu::Cpu;
 use gpu::Gpu;
 
-use std::io::{stdin, Read};
+extern crate sfml;
+use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture};
+use sfml::window::{Event, Key, Style};
 
 fn main() {
     let cartridge: Rom = Rom::load("tetris.gb").unwrap();
@@ -22,15 +24,21 @@ fn main() {
         return;
     }
 
+    let mut window = RenderWindow::new((160, 144), "gb-rust", Style::CLOSE, &Default::default());
+    window.set_vertical_sync_enabled(true);
+    window.set_framerate_limit(60);
+
     let mut memory: Memory = Memory::new(cartridge);
     let mut cpu: Cpu = Cpu::new();
     let mut gpu: Gpu = Gpu::new();
+
+    let mut screen: Texture = Texture::new(160, 144).unwrap();
 
     let mut steps: u64 = 0;
 
     let mut debugging;
     loop {
-        debugging = steps > 50000000;
+        debugging = steps > 25000 && false;
         // read input
         // if should quit: break loop
 
@@ -44,7 +52,25 @@ fn main() {
             gpu.print_state();
         }
 
-        //let _ = stdin().read(&mut [0u8]).unwrap();
+        if draw {
+            window.clear(&Color::BLACK);
+            screen.update_from_pixels(&gpu.screen_rgba, 160, 144, 0, 0);
+
+            let sprite = Sprite::with_texture(&screen);
+            window.draw(&sprite);
+            window.display();
+
+
+            if let Some(event) = window.poll_event() {
+                match event {
+                    Event::Closed
+                    | Event::KeyPressed {
+                        code: Key::Escape, ..
+                    } => return,
+                    _ => {}
+                }
+            }
+        }
 
         steps += 1;
     }
