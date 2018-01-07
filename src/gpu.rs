@@ -185,13 +185,13 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
         let tilestart = (signedtiledata + tilenum * TILE_SIZE) as u16;
         
         let tilerow = tilestart + (ty * 2);
-        let bit = 0b1 << tx;
+        let bit = 0b1 << (7 - tx);
 
         // TODO draw all eight pixels at once.
         let rowbyte1 = mem.get(tilerow);
         let rowbyte2 = mem.get(tilerow + 1);
 
-        let pixel = ((rowbyte1 & bit) >> tx) | (((rowbyte2 & bit) >> tx) << 1);
+        let pixel = ((rowbyte1 & bit) >> (7 - tx)) | (((rowbyte2 & bit) >> (7 - tx)) << 1);
         let colour = apply_palette(pixel, bgp);
 
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4] = colour;
@@ -222,10 +222,10 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
 
 fn apply_palette(colour: u8, pal: u8) -> u8 {
     match colour {
-        0 => get_colour((pal & 0b11000000) >> 6),
-        1 => get_colour((pal & 0b00110000) >> 4),
-        2 => get_colour((pal & 0b00001100) >> 2),
-        3 => get_colour(pal & 0b00000011),
+        3 => get_colour((pal & 0b11000000) >> 6),
+        2 => get_colour((pal & 0b00110000) >> 4),
+        1 => get_colour((pal & 0b00001100) >> 2),
+        0 => get_colour(pal & 0b00000011),
         _ => panic!("Invalid colour {}", colour),
     }
 }
