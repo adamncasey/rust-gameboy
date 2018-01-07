@@ -38,7 +38,7 @@ fn main() {
 
     let mut debugging;
     loop {
-        debugging = steps > 25000 && false;
+        debugging = steps > 50000;
         // read input
         // if should quit: break loop
 
@@ -49,7 +49,7 @@ fn main() {
         if debugging {
             println!("State after {} total steps {} cycles", steps, cycles);
             cpu.print_state();
-            gpu.print_state();
+            //gpu.print_state();
         }
 
         if draw {

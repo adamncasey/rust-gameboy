@@ -74,7 +74,7 @@ impl Instruction {
     pub fn read(mem: &Memory, addr: u16) -> Instruction {
         let opcode: u8 = mem.get(addr);
 
-        if opcode == 0x3B {
+        if opcode == 0xCB {
             return read_extended_opcode(mem.get(addr + 1), addr + 2, mem);
         }
 

@@ -1,9 +1,9 @@
 use memory::Memory;
 
-const GB_HSIZE: usize = 144;
-const GB_VSIZE: usize = 160;
+const GB_HSIZE: usize = 160;
+const GB_VSIZE: usize = 144;
 
-//const LCD_ON_BIT: u8 = 1 << 7;
+const LCD_ON_BIT: u8 = 1 << 7;
 const WINDOW_TILEMAP_BIT: u8 = 1 << 6;
 const WINDOW_DISP_BIT: u8 = 1 << 5;
 const TILEDATA_BIT: u8 = 1 << 4;
@@ -33,12 +33,20 @@ impl Gpu {
             mode: GpuMode::HBlank,
             mode_elapsed: 0,
             line: 0,
-            screen_rgba: vec![0; GB_VSIZE * GB_HSIZE * 4],
+            screen_rgba: vec![255; GB_VSIZE * GB_HSIZE * 4],
         }
     }
 
     pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) -> bool {
         let mut draw: bool = false;
+
+        // TODO current load this byte twice
+        let lcdc: u8 = mem.get(0xFF40);
+        if (lcdc & LCD_ON_BIT) == 0 {
+            self.line = 0;
+            self.mode_elapsed = 0;
+            self.mode = GpuMode::VBlank;
+        }
 
         self.mode_elapsed += elapsed as u32;
         match self.mode {
@@ -59,6 +67,16 @@ impl Gpu {
                     if self.line == 143 {
                         self.mode = GpuMode::VBlank;
                         // Draw screen (Callback?)
+                        
+                        print!("bg tilemap false: ");
+                        for i in 0..(32*32) {
+                            print!("{:X}", mem.get(0x9800 + i));
+                        }
+                        
+                        print!("bg tilemap true: ");
+                        for i in 0..(32*32) {
+                            print!("{:X}", mem.get(0x9C00 + i));
+                        }
                         draw = true;
                     } else {
                         self.mode = GpuMode::OAMRead;
@@ -71,8 +89,8 @@ impl Gpu {
 
                 if self.line > 153 {
                     // Blank screen for re-writing
-                    self.screen_rgba.resize(0, 0);
-                    self.screen_rgba.resize(GB_VSIZE * GB_HSIZE * 4, 0);
+                    self.screen_rgba.resize(0, 255);
+                    self.screen_rgba.resize(GB_VSIZE * GB_HSIZE * 4, 255);
                     self.mode = GpuMode::OAMRead;
                     self.line = 0;
                 }
@@ -99,12 +117,12 @@ impl Gpu {
 
     fn draw_line(line: u8, mem: &Memory, rgba: &mut [u8]) {
         let lcdc: u8 = mem.get(0xFF40);
-        let tiles = tiles_start(lcdc & TILEDATA_BIT != 0);
+        let tiles = tiles_start((lcdc & TILEDATA_BIT) != 0);
 
         let bg_win_colours: u8 = mem.get(0xFF47);
 
         if lcdc & BG_DISP_BIT != 0 {
-            let bgmap: bool = lcdc & BG_TILEMAP_BIT != 0;
+            let bgmap: bool = (lcdc & BG_TILEMAP_BIT) != 0;
             let tilemap = bg_tilemap(bgmap);
             draw_background(line, mem, bg_win_colours, tiles, tilemap, bgmap, rgba);
         }
@@ -129,9 +147,9 @@ impl Gpu {
     }
 }
 
-fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16, bgmap: bool, rgb: &mut [u8]) {
+fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16, bgmap: bool, rgba: &mut [u8]) {
     let scy: u8 = mem.get(0xFF42);
-    let bgy =  (line + scy) as u16;
+    let bgy = (line + scy) as u16;
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -153,16 +171,20 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
 
         let tx: u16 = (bgx % 8) as u16;
 
-        let mut tilenum: u16 = mem.get(tilemap + vtile * 32 + htile) as u16;
+        let mut tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
 
-        if bgmap && tilenum < 128 {
-            tilenum += 256;
+        let tilenum: i32 = if !bgmap {
+            (tilenumtemp as i8) as i32
         }
+        else {
+            (tilenumtemp as u16) as i32
+        };
         
-        const TILE_SIZE: u16 = 2;
-        let tilestart = tiledata + tilenum * TILE_SIZE;
+        const TILE_SIZE: i32 = 16;
+        let signedtiledata: i32 = tiledata as u32 as i32;
+        let tilestart = (signedtiledata + tilenum * TILE_SIZE) as u16;
         
-        let tilerow = tilestart + ((ty * 2) / 8);
+        let tilerow = tilestart + (ty * 2);
         let bit = 0b1 << tx;
 
         // TODO draw all eight pixels at once.
@@ -172,10 +194,10 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
         let pixel = ((rowbyte1 & bit) >> tx) | (((rowbyte2 & bit) >> tx) << 1);
         let colour = apply_palette(pixel, bgp);
 
-        rgb[((line as usize) * GB_HSIZE + i as usize) * 4] = colour;
-        rgb[((line as usize) * GB_HSIZE + i as usize) * 4 + 1] = colour;
-        rgb[((line as usize) * GB_HSIZE + i as usize) * 4 + 2] = colour;
-        rgb[((line as usize) * GB_HSIZE + i as usize) * 4 + 3] = 255;
+        rgba[((line as usize) * GB_HSIZE + i as usize) * 4] = colour;
+        rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 1] = colour;
+        rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 2] = colour;
+        rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 3] = 255;
         if line > 129 {
         println!(
             "line {} scx{} scy{} bgx{} bgy{} tilenum {} tile {} tx {} ty {} tilestart {} tilerow {} bit {} bgp {} pixel {} colour {}",
@@ -220,11 +242,12 @@ fn get_colour(colour: u8) -> u8 {
 
 fn bg_tilemap(bit: bool) -> u16 {
     if bit {
-        0x1C00
+        0x9C00
     } else {
-        0x1800
+        0x9800
     }
 }
+
 fn win_tilemap(bit: bool) -> u16 {
     if bit {
         0x9C00
@@ -237,6 +260,6 @@ fn tiles_start(bit: bool) -> u16 {
     if bit {
         0x8000
     } else {
-        0x8800
+        0x9000
     }
 }
