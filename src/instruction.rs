@@ -1,83 +1,174 @@
 use cpu::{Cpu, Cpu16Register, CpuRegister};
 use memory::Memory;
 use math;
-use opcode::{read_opcode, read_extended_opcode};
+use opcode::{read_extended_opcode, read_opcode};
 
 #[derive(Debug)]
 pub enum Instruction {
     Noop,
-    LDI16 { val: u16, reg: Cpu16Register },
-    LDI8 { val: u8, reg: CpuRegister },
-    LDR8 { src: CpuRegister, dst: CpuRegister },
+    LDI16 {
+        val: u16,
+        reg: Cpu16Register,
+    },
+    LDI8 {
+        val: u8,
+        reg: CpuRegister,
+    },
+    LDR8 {
+        src: CpuRegister,
+        dst: CpuRegister,
+    },
     LDA8 {
         src_addr: Cpu16Register,
         dst: CpuRegister,
     },
-    LDHA { addr: u8 },
+    LDHA {
+        addr: u8,
+    },
     LDHCA,
     LDD,
     LDI,
-    LDAA { addr: u16 },
-    JP { addr: u16 },
-    JPNZ { addr: u16 },
-    JPZ { addr: u16 },
+    LDAA {
+        addr: u16,
+    },
+    JP {
+        addr: u16,
+    },
+    JPNZ {
+        addr: u16,
+    },
+    JPZ {
+        addr: u16,
+    },
     JPA,
-    JR { offset: i8 },
-    JRNZ { offset: i8 },
-    JRZ { offset: i8 },
-    CALL { addr: u16 },
+    JR {
+        offset: i8,
+    },
+    JRNZ {
+        offset: i8,
+    },
+    JRZ {
+        offset: i8,
+    },
+    CALL {
+        addr: u16,
+    },
     RET,
     RETNZ,
     RETZ,
     RETNC,
     RETC,
     RETI,
-    RST { addr: u16 },
+    RST {
+        addr: u16,
+    },
     STA8 {
         dst_addr: Cpu16Register,
         src: CpuRegister,
     },
-    STI8 { dst_addr: Cpu16Register, val: u8 },
-    STHA { addr: u8 },
+    STI8 {
+        dst_addr: Cpu16Register,
+        val: u8,
+    },
+    STHA {
+        addr: u8,
+    },
     STHCA,
-    STAA { addr: u16 },
+    STAA {
+        addr: u16,
+    },
     STD,
     STI,
-    SUBR { reg: CpuRegister },
-    SUBA { reg_addr: Cpu16Register },
-    SUBI { val: u8 },
-    SBCR { reg: CpuRegister },
-    SBCA { reg_addr: Cpu16Register },
-    ADDR { reg: CpuRegister },
+    SUBR {
+        reg: CpuRegister,
+    },
+    SUBA {
+        reg_addr: Cpu16Register,
+    },
+    SUBI {
+        val: u8,
+    },
+    SBCR {
+        reg: CpuRegister,
+    },
+    SBCA {
+        reg_addr: Cpu16Register,
+    },
+    ADDR {
+        reg: CpuRegister,
+    },
     ADDA,
-    ADDI { val: u8 },
-    ADD16 { src: Cpu16Register },
-    XORR { reg: CpuRegister },
+    ADDI {
+        val: u8,
+    },
+    ADD16 {
+        src: Cpu16Register,
+    },
+    XORR {
+        reg: CpuRegister,
+    },
     XORA,
-    XORI { val: u8 },
-    INC { reg: CpuRegister },
-    DEC { reg: CpuRegister },
-    INC16 { reg: Cpu16Register },
-    DEC16 { reg: Cpu16Register },
+    XORI {
+        val: u8,
+    },
+    INC {
+        reg: CpuRegister,
+    },
+    DEC {
+        reg: CpuRegister,
+    },
+    INC16 {
+        reg: Cpu16Register,
+    },
+    DEC16 {
+        reg: Cpu16Register,
+    },
     CPL,
     DI,
     EI,
-    CMPR { reg: CpuRegister },
-    CMPI { val: u8 },
+    CMPR {
+        reg: CpuRegister,
+    },
+    CMPI {
+        val: u8,
+    },
     CMPA,
-    ORR { reg: CpuRegister },
+    ORR {
+        reg: CpuRegister,
+    },
     ORA,
-    ORI { val: u8 },
-    ANDR { reg: CpuRegister },
+    ORI {
+        val: u8,
+    },
+    ANDR {
+        reg: CpuRegister,
+    },
     ANDA,
-    ANDI { val: u8 },
-    PUSH { reg: Cpu16Register },
-    POP { reg: Cpu16Register },
-    SWAP { reg: CpuRegister },
+    ANDI {
+        val: u8,
+    },
+    PUSH {
+        reg: Cpu16Register,
+    },
+    POP {
+        reg: Cpu16Register,
+    },
+    SWAP {
+        reg: CpuRegister,
+    },
     SWAPA,
-    BIT { n: u8, reg: CpuRegister },
-    SET { n: u8, reg: CpuRegister },
-    RESET { n: u8, reg: CpuRegister },
+    BIT {
+        n: u8,
+        reg: CpuRegister,
+    },
+    SET {
+        n: u8,
+        reg: CpuRegister,
+    },
+    RESET {
+        n: u8,
+        reg: CpuRegister,
+    },
 
     ILLEGAL,
 }
@@ -159,11 +250,11 @@ impl Instruction {
             Instruction::POP { .. } => 1,
             Instruction::SWAP { .. } => 2,
             Instruction::SWAPA => 2,
-            Instruction::BIT {.. } => 2,
-            Instruction::SET {.. } => 2,
-            Instruction::RESET {.. } => 2,
+            Instruction::BIT { .. } => 2,
+            Instruction::SET { .. } => 2,
+            Instruction::RESET { .. } => 2,
 
-            Instruction::ILLEGAL => panic!("Illegal instruction")
+            Instruction::ILLEGAL => panic!("Illegal instruction"),
         }
     }
 
@@ -219,7 +310,7 @@ impl Instruction {
             Instruction::JP { addr } => {
                 cpu.jump(addr);
                 cycles = 16;
-            },
+            }
             Instruction::JPNZ { addr } => if !cpu.z_flag() {
                 cpu.jump(addr);
                 cycles = 16;
@@ -236,7 +327,7 @@ impl Instruction {
                 let addr = cpu.get16(Cpu16Register::HL);
                 cpu.jump(addr);
                 cycles = 4;
-            },
+            }
             Instruction::JR { offset } => {
                 cpu.rjump(offset + 2);
                 cycles = 12;
@@ -483,22 +574,21 @@ impl Instruction {
                 mem.set(addr, math::swap_nibble(cpu, val));
                 cycles = 16;
             }
-            Instruction::BIT {n, reg} => {
+            Instruction::BIT { n, reg } => {
                 let val = cpu.get(reg);
                 math::bit(cpu, val, n);
                 cycles = 8;
             }
-            Instruction::SET {n, reg} => {
+            Instruction::SET { n, reg } => {
                 let newval = math::set(cpu.get(reg), n);
                 cpu.set(reg, newval);
                 cycles = 8;
             }
-            Instruction::RESET {n, reg} => {
+            Instruction::RESET { n, reg } => {
                 let newval = math::reset(cpu.get(reg), n);
                 cpu.set(reg, newval);
                 cycles = 8;
-            }
-            // TODO Halt: If interrupts disabled skip 
+            } // TODO Halt: If interrupts disabled skip
         };
 
         return cycles;

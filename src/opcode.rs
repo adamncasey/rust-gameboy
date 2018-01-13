@@ -415,14 +415,28 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             src: CpuRegister::A,
             dst: CpuRegister::A,
         },
-        0x80 => Instruction::ADDR { reg: CpuRegister::B },
-        0x81 => Instruction::ADDR { reg: CpuRegister::C },
-        0x82 => Instruction::ADDR { reg: CpuRegister::D },
-        0x83 => Instruction::ADDR { reg: CpuRegister::E },
-        0x84 => Instruction::ADDR { reg: CpuRegister::H },
-        0x85 => Instruction::ADDR { reg: CpuRegister::L },
+        0x80 => Instruction::ADDR {
+            reg: CpuRegister::B,
+        },
+        0x81 => Instruction::ADDR {
+            reg: CpuRegister::C,
+        },
+        0x82 => Instruction::ADDR {
+            reg: CpuRegister::D,
+        },
+        0x83 => Instruction::ADDR {
+            reg: CpuRegister::E,
+        },
+        0x84 => Instruction::ADDR {
+            reg: CpuRegister::H,
+        },
+        0x85 => Instruction::ADDR {
+            reg: CpuRegister::L,
+        },
         0x86 => Instruction::ADDA,
-        0x87 => Instruction::ADDR { reg: CpuRegister::A },
+        0x87 => Instruction::ADDR {
+            reg: CpuRegister::A,
+        },
         0x90 => Instruction::SUBR {
             reg: CpuRegister::B,
         },
@@ -471,14 +485,28 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x9F => Instruction::SBCR {
             reg: CpuRegister::A,
         },
-        0xA0 => Instruction::ANDR { reg: CpuRegister::B },
-        0xA1 => Instruction::ANDR { reg: CpuRegister::C },
-        0xA2 => Instruction::ANDR { reg: CpuRegister::D },
-        0xA3 => Instruction::ANDR { reg: CpuRegister::E },
-        0xA4 => Instruction::ANDR { reg: CpuRegister::H },
-        0xA5 => Instruction::ANDR { reg: CpuRegister::L },
+        0xA0 => Instruction::ANDR {
+            reg: CpuRegister::B,
+        },
+        0xA1 => Instruction::ANDR {
+            reg: CpuRegister::C,
+        },
+        0xA2 => Instruction::ANDR {
+            reg: CpuRegister::D,
+        },
+        0xA3 => Instruction::ANDR {
+            reg: CpuRegister::E,
+        },
+        0xA4 => Instruction::ANDR {
+            reg: CpuRegister::H,
+        },
+        0xA5 => Instruction::ANDR {
+            reg: CpuRegister::L,
+        },
         0xA6 => Instruction::ANDA,
-        0xA7 => Instruction::ANDR { reg: CpuRegister::A },
+        0xA7 => Instruction::ANDR {
+            reg: CpuRegister::A,
+        },
         0xA8 => Instruction::XORR {
             reg: CpuRegister::B,
         },
@@ -564,7 +592,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xC7 => Instruction::RST { addr: 0x0000 },
         0xC8 => Instruction::RETZ,
         0xC9 => Instruction::RET,
-        0xCA => Instruction::JPZ { addr: mem.get16(argstart) },
+        0xCA => Instruction::JPZ {
+            addr: mem.get16(argstart),
+        },
         0xCD => Instruction::CALL {
             addr: mem.get16(argstart),
         },
@@ -629,7 +659,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
         },
         0xF7 => Instruction::RST { addr: 0x0030 },
-        0xFA => Instruction::LDAA { addr: mem.get16(argstart) },
+        0xFA => Instruction::LDAA {
+            addr: mem.get16(argstart),
+        },
         0xFB => Instruction::EI,
         0xFC => Instruction::ILLEGAL,
         0xFD => Instruction::ILLEGAL,
@@ -643,15 +675,32 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
 
 pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instruction {
     match opcode {
-        0x30 => Instruction::SWAP { reg: CpuRegister::B },
-        0x31 => Instruction::SWAP { reg: CpuRegister::C },
-        0x32 => Instruction::SWAP { reg: CpuRegister::D },
-        0x33 => Instruction::SWAP { reg: CpuRegister::E },
-        0x34 => Instruction::SWAP { reg: CpuRegister::H },
-        0x35 => Instruction::SWAP { reg: CpuRegister::L },
+        0x30 => Instruction::SWAP {
+            reg: CpuRegister::B,
+        },
+        0x31 => Instruction::SWAP {
+            reg: CpuRegister::C,
+        },
+        0x32 => Instruction::SWAP {
+            reg: CpuRegister::D,
+        },
+        0x33 => Instruction::SWAP {
+            reg: CpuRegister::E,
+        },
+        0x34 => Instruction::SWAP {
+            reg: CpuRegister::H,
+        },
+        0x35 => Instruction::SWAP {
+            reg: CpuRegister::L,
+        },
         0x36 => Instruction::SWAPA,
-        0x37 => Instruction::SWAP { reg: CpuRegister::A },
-        0x87 => Instruction::RESET { n: 0, reg: CpuRegister::A},
+        0x37 => Instruction::SWAP {
+            reg: CpuRegister::A,
+        },
+        0x87 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::A,
+        },
         _ => panic!("Unknown extended opcode 0xCB{:2X}", opcode),
     }
 }

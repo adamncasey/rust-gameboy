@@ -1,4 +1,4 @@
-use cpu::{Cpu, CpuRegister, Cpu16Register};
+use cpu::{Cpu, Cpu16Register, CpuRegister};
 
 pub fn subtract(cpu: &mut Cpu, val: u8) {
     let lhs: u8 = cpu.get(CpuRegister::A);
@@ -89,7 +89,6 @@ pub fn decrement16(cpu: &mut Cpu, reg: Cpu16Register) {
 }
 
 pub fn complement(cpu: &mut Cpu) {
-
     let z = cpu.z_flag();
     let c = cpu.c_flag() == 1;
     cpu.set_flags(z, true, true, c);
@@ -121,8 +120,7 @@ pub fn and(cpu: &mut Cpu, val: u8) {
     cpu.set_flags(result == 0, false, false, false);
 }
 
-pub fn compare(cpu: &mut Cpu, val: u8)
-{
+pub fn compare(cpu: &mut Cpu, val: u8) {
     let a: u8 = cpu.get(CpuRegister::A);
 
     let z = a == val;

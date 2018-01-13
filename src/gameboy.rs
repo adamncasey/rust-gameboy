@@ -25,7 +25,7 @@ impl GameBoy {
             cpu: Cpu::new(),
             gpu: Gpu::new(),
             mem: Memory::new(cartridge.rom_contents),
-            steps: 0
+            steps: 0,
         }
     }
 
@@ -46,7 +46,12 @@ impl GameBoy {
 
         self.steps += 1;
         if debug {
-            println!("State after {} total steps {} cycles: {}", self.steps, cycles, self.cpu.print_state());
+            println!(
+                "State after {} total steps {} cycles: {}",
+                self.steps,
+                cycles,
+                self.cpu.print_state()
+            );
         }
 
         if let CpuInterrupt::VBlank = int {
@@ -67,7 +72,7 @@ impl GameBoy {
                 CpuInterrupt::Joypad
             } else {
                 CpuInterrupt::None
-            }
+            },
         }
     }
 }

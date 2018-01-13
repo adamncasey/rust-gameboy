@@ -19,7 +19,12 @@ fn main() {
 
     println!("Loaded rom: {:?}", gb.title());
 
-    let mut window = RenderWindow::new((GB_HSIZE as u32, GB_VSIZE as u32), "gb-rust", Style::CLOSE, &Default::default());
+    let mut window = RenderWindow::new(
+        (GB_HSIZE as u32, GB_VSIZE as u32),
+        "gb-rust",
+        Style::CLOSE,
+        &Default::default(),
+    );
     window.set_vertical_sync_enabled(true);
     window.set_framerate_limit(60);
 
@@ -47,7 +52,7 @@ fn main() {
                     Key::D => debugging = true,
                     Key::E => debugging = false,
                     _ => (),
-                }
+                },
                 _ => {}
             }
         }

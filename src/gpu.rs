@@ -66,19 +66,17 @@ impl Gpu {
                 self.mode_elapsed -= 172;
                 Gpu::draw_line(self.line, mem, &mut self.screen_rgba);
             },
-            GpuMode::HBlank => {
-                if self.mode_elapsed >= 204 {
-                    self.mode_elapsed -= 204;
-                    self.line += 1;
+            GpuMode::HBlank => if self.mode_elapsed >= 204 {
+                self.mode_elapsed -= 204;
+                self.line += 1;
 
-                    if self.line == 143 {
-                        self.mode = GpuMode::VBlank;
-                        vblank = true;
-                    } else {
-                        self.mode = GpuMode::OAMRead;
-                    }
+                if self.line == 143 {
+                    self.mode = GpuMode::VBlank;
+                    vblank = true;
+                } else {
+                    self.mode = GpuMode::OAMRead;
                 }
-            }
+            },
             GpuMode::VBlank => if self.mode_elapsed >= 456 {
                 self.line += 1;
                 self.mode_elapsed -= 456;
@@ -110,8 +108,7 @@ impl Gpu {
 
         if vblank {
             return GpuInterrupt::VBlank;
-        }
-        else if self.lcd_status_interrupt() {
+        } else if self.lcd_status_interrupt() {
             return GpuInterrupt::LCDStatus;
         }
 
@@ -155,7 +152,15 @@ impl Gpu {
     }
 }
 
-fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16, bgmap: bool, rgba: &mut [u8]) {
+fn draw_background(
+    line: u8,
+    mem: &Memory,
+    bgp: u8,
+    tiledata: u16,
+    tilemap: u16,
+    bgmap: bool,
+    rgba: &mut [u8],
+) {
     let scy: u8 = mem.get(0xFF42);
     let bgy = (line + scy) as u16;
     let vtile = bgy / 8;
@@ -166,7 +171,7 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
     }
 
     let ty: u16 = (bgy % 8) as u16;
-    
+
     let scx: u8 = mem.get(0xFF43);
 
     for i in 0..GB_HSIZE {
@@ -183,15 +188,14 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
 
         let tilenum: i32 = if !bgmap {
             (tilenumtemp as i8) as i32
-        }
-        else {
+        } else {
             (tilenumtemp as u16) as i32
         };
-        
+
         const TILE_SIZE: i32 = 16;
         let signedtiledata: i32 = tiledata as u32 as i32;
         let tilestart = (signedtiledata + tilenum * TILE_SIZE) as u16;
-        
+
         let tilerow = tilestart + (ty * 2);
         let bit = 0b1 << (7 - tx);
 

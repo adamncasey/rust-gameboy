@@ -47,10 +47,10 @@ pub enum CpuInterrupt {
     None,
 }
 
-const INT_VBLANK:u8 = 1;
-const INT_LCDSTAT:u8 = 2;
-const INT_TIMER:u8 = 4;
-const INT_JOYPAD:u8 = 16;
+const INT_VBLANK: u8 = 1;
+const INT_LCDSTAT: u8 = 2;
+const INT_TIMER: u8 = 4;
+const INT_JOYPAD: u8 = 16;
 
 impl Cpu {
     pub fn new() -> Cpu {
@@ -104,7 +104,7 @@ impl Cpu {
         let int;
 
         let enabled: u8 = mem.get(0xFFFF);
-        
+
         match active {
             CpuInterrupt::VBlank if (enabled & INT_VBLANK) == 0 => {
                 targetpc = 0x0040;
@@ -114,7 +114,7 @@ impl Cpu {
                 targetpc = 0x0048;
                 int = INT_LCDSTAT;
             }
-            CpuInterrupt::Timer if (enabled & INT_TIMER) == 0 => { 
+            CpuInterrupt::Timer if (enabled & INT_TIMER) == 0 => {
                 targetpc = 0x0050;
                 int = INT_TIMER;
             }
@@ -125,7 +125,11 @@ impl Cpu {
             _ => return,
         };
 
-        println!("Interrupt! {:?} State prior to interrupt: {}", active, self.print_state());
+        println!(
+            "Interrupt! {:?} State prior to interrupt: {}",
+            active,
+            self.print_state()
+        );
 
         self.sp -= 2;
         mem.set16(self.sp, self.pc);

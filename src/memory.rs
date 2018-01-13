@@ -76,7 +76,7 @@ impl Memory {
             0xFF80...0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }
-    }    
+    }
 
     fn mmu(&self, addr: u16) -> &u8 {
         match addr {
