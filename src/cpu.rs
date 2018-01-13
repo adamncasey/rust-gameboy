@@ -38,6 +38,19 @@ pub enum CpuRegister {
     H,
     L,
 }
+#[derive(Debug, Clone, Copy)]
+pub enum CpuInterrupt {
+    VBlank,
+    LCDStatus,
+    Timer,
+    Joypad,
+    None,
+}
+
+const INT_VBLANK:u8 = 1;
+const INT_LCDSTAT:u8 = 2;
+const INT_TIMER:u8 = 4;
+const INT_JOYPAD:u8 = 16;
 
 impl Cpu {
     pub fn new() -> Cpu {
@@ -82,6 +95,46 @@ impl Cpu {
         return cycles;
     }
 
+    pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
+        if self.interrupts {
+            return;
+        }
+
+        let targetpc;
+        let int;
+
+        let enabled: u8 = mem.get(0xFFFF);
+        
+        match active {
+            CpuInterrupt::VBlank if (enabled & INT_VBLANK) == 0 => {
+                targetpc = 0x0040;
+                int = INT_VBLANK;
+            }
+            CpuInterrupt::LCDStatus if (enabled & INT_LCDSTAT) == 0 => {
+                targetpc = 0x0048;
+                int = INT_LCDSTAT;
+            }
+            CpuInterrupt::Timer if (enabled & INT_TIMER) == 0 => { 
+                targetpc = 0x0050;
+                int = INT_TIMER;
+            }
+            CpuInterrupt::Joypad if (enabled & INT_JOYPAD) == 0 => {
+                targetpc = 0x0060;
+                int = INT_JOYPAD;
+            }
+            _ => return,
+        };
+
+        println!("Interrupt! {:?} State prior to interrupt:", active);
+        self.print_state();
+
+        mem.set16(self.sp, self.pc);
+        self.sp -= 2;
+
+        self.pc = targetpc;
+        mem.set(0xFF0F, int);
+    }
+
     pub fn set(&mut self, reg: CpuRegister, val: u8) {
         match reg {
             CpuRegister::A => self.a = val,
@@ -93,6 +146,7 @@ impl Cpu {
             CpuRegister::L => self.l = val,
         }
     }
+
     pub fn get(&self, reg: CpuRegister) -> u8 {
         match reg {
             CpuRegister::A => self.a,

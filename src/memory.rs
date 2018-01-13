@@ -20,10 +20,10 @@ const IO_SIZE: usize = 76;
 const HIGHRAM_SIZE: usize = 128;
 
 impl Memory {
-    pub fn new(rom: Rom) -> Memory {
+    pub fn new(rom_contents: Vec<u8>) -> Memory {
         // Move rom contents into Memory
         let mut mem = Memory {
-            cartridge: rom.rom_contents,
+            cartridge: rom_contents,
             vram: vec![0; VRAM_SIZE],
             ram: vec![0; RAM_SIZE],
             eram: vec![0; ERAM_SIZE],

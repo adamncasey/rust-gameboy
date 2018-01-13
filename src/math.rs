@@ -132,3 +132,26 @@ pub fn compare(cpu: &mut Cpu, val: u8)
 
     cpu.set_flags(z, n, h, c);
 }
+
+pub fn swap_nibble(cpu: &mut Cpu, val: u8) -> u8 {
+    let res = ((val & 0xF0) >> 4) | ((val & 0x0F) << 4);
+
+    cpu.set_flags(val == 0, false, false, false);
+
+    return res;
+}
+
+pub fn bit(cpu: &mut Cpu, val: u8, n: u8) {
+    let res = val & (0b1 << n);
+
+    let c = cpu.c_flag() != 0;
+    cpu.set_flags(res == 0, false, true, c);
+}
+
+pub fn set(val: u8, n: u8) -> u8 {
+    val | (0b1 << n)
+}
+
+pub fn reset(val: u8, n: u8) -> u8 {
+    val | !(0b1 << n)
+}

@@ -1,7 +1,7 @@
 use memory::Memory;
 
-const GB_HSIZE: usize = 160;
-const GB_VSIZE: usize = 144;
+pub const GB_HSIZE: usize = 160;
+pub const GB_VSIZE: usize = 144;
 
 const LCD_ON_BIT: u8 = 1 << 7;
 const WINDOW_TILEMAP_BIT: u8 = 1 << 6;
@@ -18,6 +18,12 @@ enum GpuMode {
     VRAMRead,
     HBlank,
     VBlank,
+}
+
+pub enum GpuInterrupt {
+    None,
+    VBlank,
+    LCDStatus,
 }
 
 pub struct Gpu {
@@ -37,16 +43,17 @@ impl Gpu {
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) -> bool {
-        let mut draw: bool = false;
-
-        // TODO current load this byte twice
+    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) -> GpuInterrupt {
+        // TODO currently load this byte twice
         let lcdc: u8 = mem.get(0xFF40);
         if (lcdc & LCD_ON_BIT) == 0 {
             self.line = 0;
             self.mode_elapsed = 0;
             self.mode = GpuMode::VBlank;
+            return GpuInterrupt::None;
         }
+
+        let mut vblank = false;
 
         self.mode_elapsed += elapsed as u32;
         match self.mode {
@@ -66,18 +73,7 @@ impl Gpu {
 
                     if self.line == 143 {
                         self.mode = GpuMode::VBlank;
-                        // Draw screen (Callback?)
-                        
-                        print!("bg tilemap false: ");
-                        for i in 0..(32*32) {
-                            print!("{:X}", mem.get(0x9800 + i));
-                        }
-                        
-                        print!("bg tilemap true: ");
-                        for i in 0..(32*32) {
-                            print!("{:X}", mem.get(0x9C00 + i));
-                        }
-                        draw = true;
+                        vblank = true;
                     } else {
                         self.mode = GpuMode::OAMRead;
                     }
@@ -112,7 +108,19 @@ impl Gpu {
 
         mem.set(0xFF41, newlcdstat);
 
-        return draw;
+        if vblank {
+            return GpuInterrupt::VBlank;
+        }
+        else if self.lcd_status_interrupt() {
+            return GpuInterrupt::LCDStatus;
+        }
+
+        return GpuInterrupt::None;
+    }
+
+    fn lcd_status_interrupt(&self) -> bool {
+        // TODO Should we trigger an LCD Status int?
+        return false;
     }
 
     fn draw_line(line: u8, mem: &Memory, rgba: &mut [u8]) {
@@ -161,8 +169,8 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
     
     let scx: u8 = mem.get(0xFF43);
 
-    for i in 0..160 {
-        let bgx = (i + scx) as u16;
+    for i in 0..GB_HSIZE {
+        let bgx = (i as u16) + (scx as u16);
         let htile = bgx / 8;
         if htile >= 32 {
             println!("reached hend of tile {} {} {}", htile, line, i);
@@ -198,24 +206,6 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 1] = colour;
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 2] = colour;
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 3] = 255;
-        if line > 129 {
-        println!(
-            "line {} scx{} scy{} bgx{} bgy{} tilenum {} tile {} tx {} ty {} tilestart {} tilerow {} bit {} bgp {} pixel {} colour {}",
-            line,
-            scx,
-            scy,
-            bgx, bgy,
-            tilenum,
-            vtile * 32 + htile,
-            tx, ty,
-            tilestart,
-            tilerow,
-            bit,
-            bgp,
-            pixel,
-            colour
-        );
-        }
     }
                 
 }
