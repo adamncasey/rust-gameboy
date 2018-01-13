@@ -254,8 +254,8 @@ impl Instruction {
                 cycles = 8;
             },
             Instruction::CALL { addr } => {
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.jump(addr);
                 cycles = 24;
             }
@@ -294,8 +294,8 @@ impl Instruction {
             }
             Instruction::RST { addr } => {
                 // Store next pc on stack & jump to addr
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.jump(addr);
                 cycles = 16;
             }
@@ -461,15 +461,14 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::PUSH { reg } => {
-                let sp = cpu.sp;
-                mem.set16(sp, cpu.get16(reg));
-                cpu.sp = sp - 2;
+                cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.get16(reg));
                 cycles = 16;
             }
             Instruction::POP { reg } => {
-                let sp = cpu.sp + 2;
+                let sp = cpu.sp;
                 cpu.set16(reg, mem.get16(sp));
-                cpu.sp = sp;
+                cpu.sp += 2;
                 cycles = 16;
             }
             Instruction::SWAP { reg } => {

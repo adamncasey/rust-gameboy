@@ -207,7 +207,6 @@ fn draw_background(line: u8, mem: &Memory, bgp: u8, tiledata: u16, tilemap: u16,
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 2] = colour;
         rgba[((line as usize) * GB_HSIZE + i as usize) * 4 + 3] = 255;
     }
-                
 }
 
 fn apply_palette(colour: u8, pal: u8) -> u8 {

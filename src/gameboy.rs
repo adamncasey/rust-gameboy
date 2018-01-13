@@ -46,8 +46,7 @@ impl GameBoy {
 
         self.steps += 1;
         if debug {
-            println!("State after {} total steps {} cycles", self.steps, cycles);
-            self.cpu.print_state();
+            println!("State after {} total steps {} cycles: {}", self.steps, cycles, self.cpu.print_state());
         }
 
         if let CpuInterrupt::VBlank = int {

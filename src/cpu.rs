@@ -125,14 +125,16 @@ impl Cpu {
             _ => return,
         };
 
-        println!("Interrupt! {:?} State prior to interrupt:", active);
-        self.print_state();
+        println!("Interrupt! {:?} State prior to interrupt: {}", active, self.print_state());
 
-        mem.set16(self.sp, self.pc);
         self.sp -= 2;
+        mem.set16(self.sp, self.pc);
 
         self.pc = targetpc;
         mem.set(0xFF0F, int);
+
+        // Further interrupts are disabled until re-enabled (RETI / EI)
+        self.disable_interrupts();
     }
 
     pub fn set(&mut self, reg: CpuRegister, val: u8) {
@@ -237,10 +239,9 @@ impl Cpu {
     }
 
     pub fn ret(&mut self, mem: &Memory) {
-        let sp = self.sp.wrapping_add(2);
-        let newpc = mem.get16(sp);
+        let newpc = mem.get16(self.sp);
 
-        self.sp = sp;
+        self.sp = self.sp.wrapping_add(2);
         self.jump(newpc);
     }
 
@@ -252,8 +253,8 @@ impl Cpu {
         self.interrupts = true;
     }
 
-    pub fn print_state(&self) {
-        println!(
+    pub fn print_state(&self) -> String {
+        format!(
             "pc {:X} sp {:X} a {:X} b {:X} c {:X} d {:X} e {:X} f {:X} h {:X} l {:X} ",
             self.pc,
             self.sp,
@@ -265,6 +266,6 @@ impl Cpu {
             self.f,
             self.h,
             self.l
-        );
+        )
     }
 }
