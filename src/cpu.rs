@@ -96,7 +96,7 @@ impl Cpu {
     }
 
     pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
-        if self.interrupts {
+        if !self.interrupts {
             return;
         }
 
@@ -106,19 +106,19 @@ impl Cpu {
         let enabled: u8 = mem.get(0xFFFF);
 
         match active {
-            CpuInterrupt::VBlank if (enabled & INT_VBLANK) == 0 => {
+            CpuInterrupt::VBlank if (enabled & INT_VBLANK) != 0 => {
                 targetpc = 0x0040;
                 int = INT_VBLANK;
             }
-            CpuInterrupt::LCDStatus if (enabled & INT_LCDSTAT) == 0 => {
+            CpuInterrupt::LCDStatus if (enabled & INT_LCDSTAT) != 0 => {
                 targetpc = 0x0048;
                 int = INT_LCDSTAT;
             }
-            CpuInterrupt::Timer if (enabled & INT_TIMER) == 0 => {
+            CpuInterrupt::Timer if (enabled & INT_TIMER) != 0 => {
                 targetpc = 0x0050;
                 int = INT_TIMER;
             }
-            CpuInterrupt::Joypad if (enabled & INT_JOYPAD) == 0 => {
+            CpuInterrupt::Joypad if (enabled & INT_JOYPAD) != 0 => {
                 targetpc = 0x0060;
                 int = INT_JOYPAD;
             }
@@ -254,7 +254,7 @@ impl Cpu {
     }
 
     pub fn disable_interrupts(&mut self) {
-        self.interrupts = true;
+        self.interrupts = false;
     }
 
     pub fn print_state(&self) -> String {

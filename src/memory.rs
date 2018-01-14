@@ -1,5 +1,3 @@
-use rom::Rom;
-
 pub struct Memory {
     cartridge: Vec<u8>,
     vram: Vec<u8>,
