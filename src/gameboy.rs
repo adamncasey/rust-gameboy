@@ -1,6 +1,7 @@
 use rom::Rom;
 use cpu::{Cpu, CpuInterrupt};
 use gpu::{Gpu, GpuInterrupt};
+use input::Input;
 use memory::Memory;
 
 pub struct GameBoy {
@@ -8,6 +9,7 @@ pub struct GameBoy {
     cpu: Cpu,
     gpu: Gpu,
     mem: Memory,
+    input: Input,
 
     steps: u64,
 }
@@ -25,6 +27,7 @@ impl GameBoy {
             cpu: Cpu::new(),
             gpu: Gpu::new(),
             mem: Memory::new(cartridge.rom_contents),
+            input: Input::new(),
             steps: 0,
         }
     }
@@ -37,18 +40,17 @@ impl GameBoy {
         let cycles: u8 = self.cpu.cycle(&mut self.mem, debug);
 
         let igpu = self.gpu.cycle(&mut self.mem, cycles);
-        let ijoypad = false;
+        let ijoypad = self.input.fetch_interrupt();
         let itimer = false;
 
         let int = self.get_interrupt(igpu, ijoypad, itimer);
         if let CpuInterrupt::None = int {
             // nothing TODO syntax
         } else {
-            if let CpuInterrupt::VBlank = int {
-                println!("VBlank {:?}", int);
-            }
             self.cpu.interrupt(&mut self.mem, int);
         }
+
+        self.input.update(&mut self.mem);
 
         self.steps += 1;
         if debug {
@@ -66,6 +68,10 @@ impl GameBoy {
         }
 
         return false;
+    }
+
+    pub fn input(&mut self) -> &mut Input {
+        &mut self.input
     }
 
     fn get_interrupt(&mut self, igpu: GpuInterrupt, ijoypad: bool, itimer: bool) -> CpuInterrupt {

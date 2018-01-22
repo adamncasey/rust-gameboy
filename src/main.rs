@@ -6,9 +6,11 @@ mod math;
 mod gpu;
 mod opcode;
 mod gameboy;
+mod input;
 
 use gpu::{GB_HSIZE, GB_VSIZE};
 use gameboy::GameBoy;
+use input::Button;
 
 extern crate sfml;
 use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture};
@@ -68,8 +70,27 @@ fn main() {
                     Key::Escape => return,
                     Key::D => debugging = true,
                     Key::E => debugging = false,
+                    Key::A => gb.input().set_input(Button::A, true),
+                    Key::Z => gb.input().set_input(Button::B, true),
+                    Key::M => gb.input().set_input(Button::Start, true),
+                    Key::N => gb.input().set_input(Button::Select, true),
+                    Key::Up => gb.input().set_input(Button::Up, true),
+                    Key::Down => gb.input().set_input(Button::Down, true),
+                    Key::Left => gb.input().set_input(Button::Left, true),
+                    Key::Right => gb.input().set_input(Button::Right, true),
                     _ => (),
                 },
+                Event::KeyReleased { code, .. } => match code {
+                    Key::A => gb.input().set_input(Button::A, false),
+                    Key::Z => gb.input().set_input(Button::B, false),
+                    Key::M => gb.input().set_input(Button::Start, false),
+                    Key::N => gb.input().set_input(Button::Select, false),
+                    Key::Up => gb.input().set_input(Button::Up, false),
+                    Key::Down => gb.input().set_input(Button::Down, false),
+                    Key::Left => gb.input().set_input(Button::Left, false),
+                    Key::Right => gb.input().set_input(Button::Right, false),
+                    _ => (),
+                }
                 _ => {}
             }
         }

@@ -99,10 +99,13 @@ impl Memory {
 
         // TODO Handle input register
         match addr {
+            0xFF00 => {
+
+            }
             0xFF46 => {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
-                println!("DMA from {:x}", source);
+                //println!("DMA from {:x}", source);
                 for i in 0..160 {
                     let val: u8 = self.get(source + i);
                     self.set(target + i, val);

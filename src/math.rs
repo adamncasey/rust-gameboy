@@ -147,9 +147,22 @@ pub fn bit(cpu: &mut Cpu, val: u8, n: u8) {
 }
 
 pub fn set(val: u8, n: u8) -> u8 {
-    val | (0b1 << n)
+    let mask = 0b1 << n;
+
+    return val | mask;
 }
 
 pub fn reset(val: u8, n: u8) -> u8 {
-    val | !(0b1 << n)
+    let mask = 0b1 << n;
+
+    return !((!val) | mask);
+}
+
+pub fn sla(cpu: &mut Cpu, val: u8) -> u8 {
+    let res = val << 1;
+    let msb = (val & 0b10000000) != 0;
+
+    cpu.set_flags(res == 0, false, false, msb);
+
+    res
 }

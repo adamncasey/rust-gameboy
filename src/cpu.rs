@@ -97,7 +97,7 @@ impl Cpu {
 
     pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
         if !self.interrupts {
-            println!("Interrupts disabled {:?}", active);
+            //println!("Interrupts disabled {:?}", active);
             return;
         }
 
@@ -124,11 +124,10 @@ impl Cpu {
                 int = INT_JOYPAD;
             }
             CpuInterrupt::None => {
-                println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
                 return;
             }
             _ => {
-                println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
+                //println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
                 return;
             }
         };

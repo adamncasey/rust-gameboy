@@ -40,6 +40,12 @@ pub enum Instruction {
     JPZ {
         addr: u16,
     },
+    JPNC {
+        addr: u16,
+    },
+    JPC {
+        addr: u16,
+    },
     JPA,
     JR {
         offset: i8,
@@ -48,6 +54,12 @@ pub enum Instruction {
         offset: i8,
     },
     JRZ {
+        offset: i8,
+    },
+    JRNC {
+        offset: i8,
+    },
+    JRC {
         offset: i8,
     },
     CALL {
@@ -166,12 +178,18 @@ pub enum Instruction {
         n: u8,
         reg: CpuRegister,
     },
+    BITA { n: u8 },
     SET {
         n: u8,
         reg: CpuRegister,
     },
+    SETA { n: u8 },
     RESET {
         n: u8,
+        reg: CpuRegister,
+    },
+    RESETA { n: u8 },
+    SLA {
         reg: CpuRegister,
     },
 
@@ -204,10 +222,14 @@ impl Instruction {
             Instruction::JP { .. } => 3,
             Instruction::JPNZ { .. } => 3,
             Instruction::JPZ { .. } => 3,
+            Instruction::JPNC { .. } => 3,
+            Instruction::JPC { .. } => 3,
             Instruction::JPA => 1,
             Instruction::JR { .. } => 2,
             Instruction::JRNZ { .. } => 2,
             Instruction::JRZ { .. } => 2,
+            Instruction::JRNC { .. } => 2,
+            Instruction::JRC { .. } => 2,
             Instruction::CALL { .. } => 3,
             Instruction::RET => 1,
             Instruction::RETNZ => 1,
@@ -259,8 +281,12 @@ impl Instruction {
             Instruction::SWAP { .. } => 2,
             Instruction::SWAPA => 2,
             Instruction::BIT { .. } => 2,
+            Instruction::BITA { .. } => 2,
             Instruction::SET { .. } => 2,
+            Instruction::SETA { .. } => 2,
             Instruction::RESET { .. } => 2,
+            Instruction::RESETA { .. } => 2,
+            Instruction::SLA { .. } => 2,
 
             Instruction::ILLEGAL => panic!("Illegal instruction"),
         }
@@ -331,6 +357,18 @@ impl Instruction {
             } else {
                 cycles = 12;
             },
+            Instruction::JPNC { addr } => if cpu.c_flag() == 0 {
+                cpu.jump(addr);
+                cycles = 16;
+            } else {
+                cycles = 12;
+            },
+            Instruction::JPC { addr } => if cpu.c_flag() == 1 {
+                cpu.jump(addr);
+                cycles = 16;
+            } else {
+                cycles = 12;
+            },
             Instruction::JPA => {
                 let addr = cpu.get16(Cpu16Register::HL);
                 cpu.jump(addr);
@@ -347,6 +385,18 @@ impl Instruction {
                 cycles = 8;
             },
             Instruction::JRZ { offset } => if cpu.z_flag() {
+                cpu.rjump(offset + 2);
+                cycles = 12;
+            } else {
+                cycles = 8;
+            },
+            Instruction::JRNC { offset } => if cpu.c_flag() == 0 {
+                cpu.rjump(offset + 2);
+                cycles = 12;
+            } else {
+                cycles = 8;
+            },
+            Instruction::JRC { offset } => if cpu.c_flag() == 1{
                 cpu.rjump(offset + 2);
                 cycles = 12;
             } else {
@@ -608,16 +658,39 @@ impl Instruction {
                 math::bit(cpu, val, n);
                 cycles = 8;
             }
+            Instruction::BITA { n } => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                math::bit(cpu, mem.get(addr), n);
+                cycles = 16;
+            }
             Instruction::SET { n, reg } => {
                 let newval = math::set(cpu.get(reg), n);
                 cpu.set(reg, newval);
                 cycles = 8;
             }
+            Instruction::SETA { n } => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::set(mem.get(addr), n);
+                mem.set(addr, newval);
+                cycles = 16;
+            }
             Instruction::RESET { n, reg } => {
                 let newval = math::reset(cpu.get(reg), n);
                 cpu.set(reg, newval);
                 cycles = 8;
-            } // TODO Halt: If interrupts disabled skip
+            }
+            Instruction::RESETA { n } => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::reset(mem.get(addr), n);
+                mem.set(addr, newval);
+                cycles = 16;
+            }
+            Instruction::SLA { reg } => {
+                let val = cpu.get(reg);
+                let newval = math::sla(cpu, val);
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
         };
 
         return cycles;

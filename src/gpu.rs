@@ -141,7 +141,7 @@ impl Gpu {
             draw_sprites(line, mem, sprite_height, tiles, rgba);
         }
         else {
-            println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
+            //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
         }
     }
 
@@ -211,7 +211,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
         let s = load_sprite(mem, i, palettes);
 
         if !sprite_in_row(line as i16, s.y, sprite_height) || !sprite_on_disp(s.x) {
-            println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
+            //println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
             continue;
         }
 
@@ -229,7 +229,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
 
             // Is priority bit set or is the bg value zero?
             if !s.priority && rgba[rgba_start] != 255 {
-                println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
+                //println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
                 continue;
             }
             // draw pixel
@@ -241,7 +241,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
                 println!("Drawn pixel {:X} {}", rgba_start, colour);
                 set_pixel(rgba, rgba_start, colour);
             } else {
-                println!("Drew pixel {}", colour);
+                println!("Skipped pixel {}", colour);
             }
         }
     }
