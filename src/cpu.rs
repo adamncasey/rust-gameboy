@@ -65,7 +65,7 @@ impl Cpu {
             f: 0xB0,
             h: 0x01,
             l: 0x4D,
-            interrupts: false, // TODO start value?
+            interrupts: true, // TODO start value?
             jumped: false,
         }
     }
@@ -97,6 +97,7 @@ impl Cpu {
 
     pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
         if !self.interrupts {
+            println!("Interrupts disabled {:?}", active);
             return;
         }
 
@@ -122,7 +123,14 @@ impl Cpu {
                 targetpc = 0x0060;
                 int = INT_JOYPAD;
             }
-            _ => return,
+            CpuInterrupt::None => {
+                println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
+                return;
+            }
+            _ => {
+                println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
+                return;
+            }
         };
 
         println!(
@@ -251,10 +259,12 @@ impl Cpu {
 
     pub fn enable_interrupts(&mut self) {
         self.interrupts = true;
+        //println!("Interrupts enabled");
     }
 
     pub fn disable_interrupts(&mut self) {
         self.interrupts = false;
+        //println!("Interrupts disabled");
     }
 
     pub fn print_state(&self) -> String {

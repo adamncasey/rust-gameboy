@@ -41,8 +41,14 @@ impl GameBoy {
         let itimer = false;
 
         let int = self.get_interrupt(igpu, ijoypad, itimer);
-
-        self.cpu.interrupt(&mut self.mem, int);
+        if let CpuInterrupt::None = int {
+            // nothing TODO syntax
+        } else {
+            if let CpuInterrupt::VBlank = int {
+                println!("VBlank {:?}", int);
+            }
+            self.cpu.interrupt(&mut self.mem, int);
+        }
 
         self.steps += 1;
         if debug {

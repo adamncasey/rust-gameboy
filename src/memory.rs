@@ -43,6 +43,8 @@ impl Memory {
 
     pub fn set(&mut self, addr: u16, val: u8) {
         *self.mmu_mut(addr) = val;
+
+        self.special(addr, val);
     }
 
     pub fn get16(&self, addr: u16) -> u16 {
@@ -89,6 +91,24 @@ impl Memory {
             0xFF4C...0xFF7F => &self.unused,
             0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
             _ => panic!("Unknown memory region 0x{:X}", addr),
+        }
+    }
+    fn special(&mut self, addr: u16, val: u8) {
+        let source: u16 = (val as u16) << 8;
+        let target: u16 = 0xFE00;
+
+        // TODO Handle input register
+        match addr {
+            0xFF46 => {
+                // OAM Write
+                // TODO SLOW This could be a lot faster
+                println!("DMA from {:x}", source);
+                for i in 0..160 {
+                    let val: u8 = self.get(source + i);
+                    self.set(target + i, val);
+                }
+            }
+            _ => ()
         }
     }
 }

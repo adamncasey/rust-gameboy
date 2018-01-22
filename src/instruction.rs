@@ -104,6 +104,9 @@ pub enum Instruction {
     ADD16 {
         src: Cpu16Register,
     },
+    ADDSP {
+        val: u8,
+    },
     XORR {
         reg: CpuRegister,
     },
@@ -114,9 +117,11 @@ pub enum Instruction {
     INC {
         reg: CpuRegister,
     },
+    INCA,
     DEC {
         reg: CpuRegister,
     },
+    DECA,
     INC16 {
         reg: Cpu16Register,
     },
@@ -227,11 +232,14 @@ impl Instruction {
             Instruction::ADDA => 1,
             Instruction::ADDI { .. } => 2,
             Instruction::ADD16 { .. } => 1,
+            Instruction::ADDSP { .. } => 2,
             Instruction::XORR { .. } => 1,
             Instruction::XORA => 1,
             Instruction::XORI { .. } => 2,
             Instruction::INC { .. } => 1,
+            Instruction::INCA => 1,
             Instruction::DEC { .. } => 1,
+            Instruction::DECA => 1,
             Instruction::INC16 { .. } => 1,
             Instruction::DEC16 { .. } => 1,
             Instruction::CPL => 1,
@@ -464,8 +472,12 @@ impl Instruction {
             }
             Instruction::ADD16 { src } => {
                 let val: u16 = cpu.get16(src);
-                math::add16(cpu, val);
+                math::add16(cpu, Cpu16Register::HL, val);
                 cycles = 8;
+            }
+            Instruction::ADDSP { val } => {
+                math::add16(cpu, Cpu16Register::SP, val as u16);
+                cycles = 16;
             }
             Instruction::XORR { reg } => {
                 let val: u8 = cpu.get(reg);
@@ -482,12 +494,29 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::INC { reg } => {
-                math::increment(cpu, reg);
+                let val = cpu.get(reg);
+                let newval = math::increment(cpu, val);
+
+                cpu.set(reg, newval);
                 cycles = 4;
             }
+            Instruction::INCA => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let val = math::increment(cpu, mem.get(addr));
+                mem.set(addr, val);
+                cycles = 12;
+            }
             Instruction::DEC { reg } => {
-                math::decrement(cpu, reg);
+                let val = cpu.get(reg);
+                let newval = math::decrement(cpu, val);
+                cpu.set(reg, newval);
                 cycles = 4;
+            }
+            Instruction::DECA => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let val = math::decrement(cpu, mem.get(addr));
+                mem.set(addr, val);
+                cycles = 12;
             }
             Instruction::INC16 { reg } => {
                 math::increment16(cpu, reg);

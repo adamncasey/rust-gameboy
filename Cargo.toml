@@ -6,3 +6,4 @@ authors = ["Adam Casey <adamncasey@gmail.com>"]
 [dependencies]
 image = "*"
 sfml = "*"
+clap = "*"

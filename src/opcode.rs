@@ -141,6 +141,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x33 => Instruction::INC16 {
             reg: Cpu16Register::SP,
         },
+        0x34 => Instruction::INCA,
         0x36 => Instruction::STI8 {
             dst_addr: Cpu16Register::HL,
             val: mem.get(argstart),
@@ -632,6 +633,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
         },
         0xE7 => Instruction::RST { addr: 0x0020 },
+        0xE8 => Instruction::ADDSP {
+            val: mem.get(argstart),
+        },
         0xE9 => Instruction::JPA,
         0xEF => Instruction::RST { addr: 0x0028 },
         0xEA => Instruction::STAA {

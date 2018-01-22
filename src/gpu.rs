@@ -44,12 +44,9 @@ impl Gpu {
     }
 
     pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) -> GpuInterrupt {
-        // TODO currently load this byte twice
+        // TODO SLOW currently load this byte twice
         let lcdc: u8 = mem.get(0xFF40);
         if (lcdc & LCD_ON_BIT) == 0 {
-            self.line = 0;
-            self.mode_elapsed = 0;
-            self.mode = GpuMode::VBlank;
             return GpuInterrupt::None;
         }
 
@@ -90,6 +87,8 @@ impl Gpu {
                 }
             },
         };
+
+        //println!("GPU State: {:?} {:?} {:?}", self.mode, self.line, self.mode_elapsed);
 
         mem.set(0xFF44, self.line);
 
@@ -141,6 +140,9 @@ impl Gpu {
             let sprite_height: u8 = get_sprite_size(lcdc);
             draw_sprites(line, mem, sprite_height, tiles, rgba);
         }
+        else {
+            println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
+        }
     }
 
     pub fn print_state(&self) {
@@ -175,7 +177,7 @@ fn draw_background(
 
     let scx: u8 = mem.get(0xFF43);
 
-    for i in 0..(GB_HSIZE+1) {
+    for i in 0..(GB_HSIZE + 1) {
         let bgx = (i as u16) + (scx as u16);
         let htile = bgx / 8;
         if htile >= 32 {
@@ -193,7 +195,7 @@ fn draw_background(
             (tilenumtemp as u16) as i32
         };
 
-        // TODO draw all eight pixels at once.
+        // TODO SLOW draw all eight pixels at once.
         let tilerow = get_tile_row_data(mem, tiledata, tilenum, ty);
         let colour = get_tile_colour(tilerow, tx, bgp);
 
@@ -209,6 +211,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
         let s = load_sprite(mem, i, palettes);
 
         if !sprite_in_row(line as i16, s.y, sprite_height) || !sprite_on_disp(s.x) {
+            println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
             continue;
         }
 
@@ -219,12 +222,14 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
         for tx in 0..8 {
             let x = s.x + tx;
             if x < 0 || x > GB_HSIZE as i16 {
+                println!("Skipping sprite x {} {}", x, tx);
                 continue;
             }
             let rgba_start = (line as usize * GB_HSIZE + x as usize) * 4;
 
             // Is priority bit set or is the bg value zero?
-            if !s.priority && rgba[rgba_start] != 0 {
+            if !s.priority && rgba[rgba_start] != 255 {
+                println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
                 continue;
             }
             // draw pixel
@@ -233,7 +238,10 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
 
             // Is this pixel transparent?
             if colour != 0 {
+                println!("Drawn pixel {:X} {}", rgba_start, colour);
                 set_pixel(rgba, rgba_start, colour);
+            } else {
+                println!("Drew pixel {}", colour);
             }
         }
     }
@@ -268,7 +276,7 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
             palettes.0
         } else {
             palettes.1
-        }
+        },
     }
 }
 

@@ -14,8 +14,25 @@ extern crate sfml;
 use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture};
 use sfml::window::{Event, Key, Style};
 
+extern crate clap;
+use clap::{Arg, App};
+
 fn main() {
-    let mut gb = GameBoy::new("tetris.gb");
+    let matches = App::new("gb-rust")
+        .version("1.0")
+        .about("Gameboy emulator in Rust!")
+        .author("A. Casey")
+        .arg(
+            Arg::with_name("debug")
+                .short("d")
+                .help("print debug information verbosely"),
+        )
+        .arg(Arg::with_name("INPUT").help("Input Gameboy file").index(1))
+        .get_matches();
+
+    let filename = matches.value_of("INPUT").unwrap_or("tetris.gb");
+
+    let mut gb = GameBoy::new(filename);
 
     println!("Loaded rom: {:?}", gb.title());
 
@@ -31,7 +48,7 @@ fn main() {
     let mut screen: Texture = Texture::new(GB_HSIZE as u32, GB_VSIZE as u32).unwrap();
     let mut screen_rgba: Vec<u8> = vec![255; GB_HSIZE * GB_VSIZE * 4];
 
-    let mut debugging = true;
+    let mut debugging = matches.is_present("debug");
     loop {
         let drawn = gb.cycle(&mut screen_rgba, debugging);
 
