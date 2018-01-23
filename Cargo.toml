@@ -4,6 +4,5 @@ version = "0.1.0"
 authors = ["Adam Casey <adamncasey@gmail.com>"]
 
 [dependencies]
-image = "*"
 sfml = "*"
 clap = "*"

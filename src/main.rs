@@ -13,8 +13,9 @@ use gameboy::GameBoy;
 use input::Button;
 
 extern crate sfml;
-use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture};
+use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture, Transformable};
 use sfml::window::{Event, Key, Style};
+use sfml::system::{Vector2f};
 
 extern crate clap;
 use clap::{Arg, App};
@@ -39,7 +40,7 @@ fn main() {
     println!("Loaded rom: {:?}", gb.title());
 
     let mut window = RenderWindow::new(
-        (GB_HSIZE as u32, GB_VSIZE as u32),
+        (GB_HSIZE as u32 *3, GB_VSIZE as u32 *3),
         "gb-rust",
         Style::CLOSE,
         &Default::default(),
@@ -58,7 +59,8 @@ fn main() {
             window.clear(&Color::BLACK);
             screen.update_from_pixels(&screen_rgba, GB_HSIZE as u32, GB_VSIZE as u32, 0, 0);
 
-            let sprite = Sprite::with_texture(&screen);
+            let mut sprite: Sprite = Sprite::with_texture(&screen);
+            sprite.set_scale(Vector2f::new(3.0, 3.0));
             window.draw(&sprite);
             window.display();
         }

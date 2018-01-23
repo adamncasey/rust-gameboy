@@ -166,3 +166,48 @@ pub fn sla(cpu: &mut Cpu, val: u8) -> u8 {
 
     res
 }
+
+pub fn rr(cpu: &mut Cpu, reg: CpuRegister) {
+    let val = cpu.get(reg);
+
+    let old_c = cpu.c_flag() << 7;
+    let c: bool = (val & 0b1) != 0;
+
+    let rotated = val.rotate_right(1);
+    let res = rotated | old_c;
+
+    cpu.set_flags(res == 0, false, false, c);
+
+    cpu.set(reg, res);
+}
+pub fn rl(cpu: &mut Cpu, reg: CpuRegister) {
+    let val = cpu.get(reg);
+
+    let old_c = cpu.c_flag();
+    let c: bool = (val & 0b10000000) != 0;
+
+    let rotated = val.rotate_left(1);
+    let res = rotated | old_c;
+
+    cpu.set_flags(res == 0, false, false, c);
+
+    cpu.set(reg, res);
+}
+pub fn rrc(cpu: &mut Cpu, reg: CpuRegister) {
+    let val = cpu.get(reg);
+
+    let c: bool = (val & 0b1) != 0;
+    let res = val.rotate_right(1);
+    cpu.set_flags(res == 0, false, false, c);
+
+    cpu.set(reg, res);
+}
+pub fn rlc(cpu: &mut Cpu, reg: CpuRegister) {
+    let val = cpu.get(reg);
+
+    let c: bool = (val & 0b10000000) != 0;
+    let res = val.rotate_left(1);
+    cpu.set_flags(res == 0, false, false, c);
+
+    cpu.set(reg, res);
+}

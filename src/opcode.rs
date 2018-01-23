@@ -27,6 +27,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::B,
         },
+        0x07 => Instruction::RLCA,
         0x09 => Instruction::ADD16 {
             src: Cpu16Register::BC,
         },
@@ -47,6 +48,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::C,
         },
+        0x0F=> Instruction::RRCA,
         // 0x10 STOP
         0x11 => Instruction::LDI16 {
             val: mem.get16(argstart),
@@ -69,6 +71,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::D,
         },
+        0x17 => Instruction::RLA,
         0x18 => Instruction::JR {
             offset: mem.get(argstart) as i8,
         },
@@ -92,6 +95,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::E,
         },
+        0x1F => Instruction::RRA,
         0x20 => Instruction::JRNZ {
             offset: mem.get(argstart) as i8,
         },
@@ -693,6 +697,34 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
 
 pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instruction {
     match opcode {
+        0x00 => Instruction::RLC { reg: CpuRegister::B },
+        0x01 => Instruction::RLC { reg: CpuRegister::C },
+        0x02 => Instruction::RLC { reg: CpuRegister::D },
+        0x03 => Instruction::RLC { reg: CpuRegister::E },
+        0x04 => Instruction::RLC { reg: CpuRegister::H },
+        0x05 => Instruction::RLC { reg: CpuRegister::L },
+        0x07 => Instruction::RLC { reg: CpuRegister::A },
+        0x08 => Instruction::RRC { reg: CpuRegister::B },
+        0x09 => Instruction::RRC { reg: CpuRegister::C },
+        0x0A => Instruction::RRC { reg: CpuRegister::D },
+        0x0B => Instruction::RRC { reg: CpuRegister::E },
+        0x0C => Instruction::RRC { reg: CpuRegister::H },
+        0x0D => Instruction::RRC { reg: CpuRegister::L },
+        0x0F => Instruction::RRC { reg: CpuRegister::A },
+        0x10 => Instruction::RL { reg: CpuRegister::B },
+        0x11 => Instruction::RL { reg: CpuRegister::C },
+        0x12 => Instruction::RL { reg: CpuRegister::D },
+        0x13 => Instruction::RL { reg: CpuRegister::E },
+        0x14 => Instruction::RL { reg: CpuRegister::H },
+        0x15 => Instruction::RL { reg: CpuRegister::L },
+        0x17 => Instruction::RL { reg: CpuRegister::A },
+        0x18 => Instruction::RR { reg: CpuRegister::B },
+        0x19 => Instruction::RR { reg: CpuRegister::C },
+        0x1A => Instruction::RR { reg: CpuRegister::D },
+        0x1B => Instruction::RR { reg: CpuRegister::E },
+        0x1C => Instruction::RR { reg: CpuRegister::H },
+        0x1D => Instruction::RR { reg: CpuRegister::L },
+        0x1F => Instruction::RR { reg: CpuRegister::A },
         0x20 => Instruction::SLA { reg: CpuRegister::B },
         0x21 => Instruction::SLA { reg: CpuRegister::C },
         0x22 => Instruction::SLA { reg: CpuRegister::D },

@@ -237,11 +237,11 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
             let colour = get_tile_colour(tilerow, tx as u8, s.palette);
 
             // Is this pixel transparent?
-            if colour != 0 {
-                println!("Drawn pixel {:X} {}", rgba_start, colour);
+            if colour != 255 {
+                //println!("Drawn pixel {:X} {}", rgba_start, colour);
                 set_pixel(rgba, rgba_start, colour);
             } else {
-                println!("Skipped pixel {}", colour);
+                //println!("Skipped pixel {}", colour);
             }
         }
     }

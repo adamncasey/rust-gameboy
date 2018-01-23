@@ -178,18 +178,40 @@ pub enum Instruction {
         n: u8,
         reg: CpuRegister,
     },
-    BITA { n: u8 },
+    BITA {
+        n: u8,
+    },
     SET {
         n: u8,
         reg: CpuRegister,
     },
-    SETA { n: u8 },
+    SETA {
+        n: u8,
+    },
     RESET {
         n: u8,
         reg: CpuRegister,
     },
-    RESETA { n: u8 },
+    RESETA {
+        n: u8,
+    },
     SLA {
+        reg: CpuRegister,
+    },
+    RLCA,
+    RLA,
+    RRCA,
+    RRA,
+    RLC {
+        reg: CpuRegister,
+    },
+    RL {
+        reg: CpuRegister,
+    },
+    RRC {
+        reg: CpuRegister,
+    },
+    RR {
         reg: CpuRegister,
     },
 
@@ -287,6 +309,14 @@ impl Instruction {
             Instruction::RESET { .. } => 2,
             Instruction::RESETA { .. } => 2,
             Instruction::SLA { .. } => 2,
+            Instruction::RLCA => 1,
+            Instruction::RRCA => 1,
+            Instruction::RLA => 1,
+            Instruction::RRA => 1,
+            Instruction::RLC { .. } => 2,
+            Instruction::RRC { .. } => 2,
+            Instruction::RL { .. } => 2,
+            Instruction::RR { .. } => 2,
 
             Instruction::ILLEGAL => panic!("Illegal instruction"),
         }
@@ -396,7 +426,7 @@ impl Instruction {
             } else {
                 cycles = 8;
             },
-            Instruction::JRC { offset } => if cpu.c_flag() == 1{
+            Instruction::JRC { offset } => if cpu.c_flag() == 1 {
                 cpu.rjump(offset + 2);
                 cycles = 12;
             } else {
@@ -690,6 +720,38 @@ impl Instruction {
                 let newval = math::sla(cpu, val);
                 cpu.set(reg, newval);
                 cycles = 8;
+            }
+            Instruction::RLCA => {
+                math::rlc(cpu, CpuRegister::A);
+                cycles = 4;
+            }
+            Instruction::RRCA => {
+                math::rrc(cpu, CpuRegister::A);
+                cycles = 4;
+            }
+            Instruction::RLA => {
+                math::rl(cpu, CpuRegister::A);
+                cycles = 4;
+            }
+            Instruction::RRA => {
+                math::rr(cpu, CpuRegister::A);
+                cycles = 4;
+            }
+            Instruction::RLC { reg } => {
+                math::rlc(cpu, reg);
+                cycles = 4;
+            }
+            Instruction::RRC { reg } => {
+                math::rrc(cpu, reg);
+                cycles = 4;
+            }
+            Instruction::RL { reg } => {
+                math::rl(cpu, reg);
+                cycles = 4;
+            }
+            Instruction::RR { reg } => {
+                math::rr(cpu, reg);
+                cycles = 4;
             }
         };
 
