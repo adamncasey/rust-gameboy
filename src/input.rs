@@ -80,7 +80,7 @@ impl Input {
 
         mem.set(
             0xFF00,
-            if self.active_col1 {
+            0xC0 | if self.active_col1 {
                 self.col1
             } else {
                 self.col2

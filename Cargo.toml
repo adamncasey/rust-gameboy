@@ -6,3 +6,6 @@ authors = ["Adam Casey <adamncasey@gmail.com>"]
 [dependencies]
 sfml = "*"
 clap = "*"
+
+[profile.release]
+debug = true

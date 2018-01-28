@@ -9,7 +9,7 @@ pub fn subtract(cpu: &mut Cpu, val: u8) {
 
     let z = result == 0;
     let h = false; // TODO
-    let c = false; // TODO
+    let c = lhs > val;
 
     cpu.set_flags(z, true, h, c);
 }
@@ -23,7 +23,7 @@ pub fn add(cpu: &mut Cpu, val: u8) {
 
     let z = result == 0;
     let h = false; // TODO
-    let c = false; // TODO
+    let c = result <= lhs && (val != 0);
 
     cpu.set_flags(z, true, h, c);
 }
@@ -36,8 +36,9 @@ pub fn add16(cpu: &mut Cpu, reg: Cpu16Register, val: u16) {
     cpu.set16(reg, result);
 
     let z = cpu.z_flag();
-    // TODO: H C
-    cpu.set_flags(z, false, false, false);
+    let h = false; // TODO
+    let c = result <= lhs && (val != 0);
+    cpu.set_flags(z, false, h, c);
 }
 
 pub fn increment(cpu: &mut Cpu, val: u8) -> u8 {
@@ -163,6 +164,25 @@ pub fn sla(cpu: &mut Cpu, val: u8) -> u8 {
     let msb = (val & 0b10000000) != 0;
 
     cpu.set_flags(res == 0, false, false, msb);
+
+    res
+}
+
+pub fn srl(cpu: &mut Cpu, val: u8) -> u8 {
+    let res = val >> 1;
+    let lsb = (val & 0b1) != 0;
+
+    cpu.set_flags(res == 0, false, false, lsb);
+
+    res
+}
+
+pub fn sra(cpu: &mut Cpu, val: u8) -> u8 {
+    let msb = val & 0b10000000;
+    let res = (val >> 1) | msb;
+    let lsb = (val & 0b1) != 0;
+
+    cpu.set_flags(res == 0, false, false, lsb);
 
     res
 }

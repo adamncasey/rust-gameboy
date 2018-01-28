@@ -222,7 +222,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
         for tx in 0..8 {
             let x = s.x + tx;
             if x < 0 || x > GB_HSIZE as i16 {
-                println!("Skipping sprite x {} {}", x, tx);
+                //println!("Skipping sprite x {} {}", x, tx);
                 continue;
             }
             let rgba_start = (line as usize * GB_HSIZE + x as usize) * 4;

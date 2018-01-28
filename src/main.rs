@@ -1,3 +1,5 @@
+#![feature(nll)]
+
 mod rom;
 mod memory;
 mod cpu;

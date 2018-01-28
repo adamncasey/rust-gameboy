@@ -106,6 +106,7 @@ pub enum Instruction {
     SBCA {
         reg_addr: Cpu16Register,
     },
+    SBCI { val: u8 },
     ADDR {
         reg: CpuRegister,
     },
@@ -119,6 +120,11 @@ pub enum Instruction {
     ADDSP {
         val: u8,
     },
+    ADC {
+        reg: CpuRegister,
+    },
+    ADCA,
+    ADCI { val: u8 },
     XORR {
         reg: CpuRegister,
     },
@@ -198,6 +204,8 @@ pub enum Instruction {
     SLA {
         reg: CpuRegister,
     },
+    SRL { reg: CpuRegister },
+    SRA { reg: CpuRegister },
     RLCA,
     RLA,
     RRCA,
@@ -272,11 +280,15 @@ impl Instruction {
             Instruction::SUBI { .. } => 2,
             Instruction::SBCR { .. } => 1,
             Instruction::SBCA { .. } => 1,
+            Instruction::SBCI { .. } => 2,
             Instruction::ADDR { .. } => 1,
             Instruction::ADDA => 1,
             Instruction::ADDI { .. } => 2,
             Instruction::ADD16 { .. } => 1,
             Instruction::ADDSP { .. } => 2,
+            Instruction::ADC { .. } => 1,
+            Instruction::ADCA => 1,
+            Instruction::ADCI { .. } => 2,
             Instruction::XORR { .. } => 1,
             Instruction::XORA => 1,
             Instruction::XORI { .. } => 2,
@@ -309,6 +321,8 @@ impl Instruction {
             Instruction::RESET { .. } => 2,
             Instruction::RESETA { .. } => 2,
             Instruction::SLA { .. } => 2,
+            Instruction::SRL { .. } => 2,
+            Instruction::SRA { .. } => 2,
             Instruction::RLCA => 1,
             Instruction::RRCA => 1,
             Instruction::RLA => 1,
@@ -536,6 +550,11 @@ impl Instruction {
                 math::subtract(cpu, val);
                 cycles = 8;
             }
+            Instruction::SBCI { val } => {
+                let newval = val + cpu.c_flag();
+                math::subtract(cpu, newval);
+                cycles = 8;
+            }
             Instruction::ADDR { reg } => {
                 let val = cpu.get(reg);
                 math::add(cpu, val);
@@ -558,6 +577,21 @@ impl Instruction {
             Instruction::ADDSP { val } => {
                 math::add16(cpu, Cpu16Register::SP, val as u16);
                 cycles = 16;
+            }
+            Instruction::ADC { reg } => {
+                let val: u8 = cpu.get(reg) + cpu.c_flag();
+                math::add(cpu, val);
+                cycles = 4;
+            }
+            Instruction::ADCA => {
+                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)) + cpu.c_flag();
+                math::add(cpu, val);
+                cycles = 8;
+            }
+            Instruction::ADCI { val } => {
+                // TODO Carry flag & overflow interaction?
+                math::add(cpu, val + cpu.c_flag());
+                cycles = 8;
             }
             Instruction::XORR { reg } => {
                 let val: u8 = cpu.get(reg);
@@ -718,6 +752,18 @@ impl Instruction {
             Instruction::SLA { reg } => {
                 let val = cpu.get(reg);
                 let newval = math::sla(cpu, val);
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::SRL { reg } => {
+                let val = cpu.get(reg);
+                let newval = math::srl(cpu, val);
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::SRA { reg } => {
+                let val = cpu.get(reg);
+                let newval = math::sra(cpu, val);
                 cpu.set(reg, newval);
                 cycles = 8;
             }

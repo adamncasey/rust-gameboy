@@ -48,7 +48,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::C,
         },
-        0x0F=> Instruction::RRCA,
+        0x0F => Instruction::RRCA,
         // 0x10 STOP
         0x11 => Instruction::LDI16 {
             val: mem.get16(argstart),
@@ -450,6 +450,28 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0x87 => Instruction::ADDR {
             reg: CpuRegister::A,
         },
+        0x88 => Instruction::ADC {
+            reg: CpuRegister::B,
+        },
+        0x89 => Instruction::ADC {
+            reg: CpuRegister::C,
+        },
+        0x8A => Instruction::ADC {
+            reg: CpuRegister::D,
+        },
+        0x8B => Instruction::ADC {
+            reg: CpuRegister::E,
+        },
+        0x8C => Instruction::ADC {
+            reg: CpuRegister::H,
+        },
+        0x8D => Instruction::ADC {
+            reg: CpuRegister::L,
+        },
+        0x8E => Instruction::ADCA,
+        0x8F => Instruction::ADC {
+            reg: CpuRegister::A,
+        },
         0x90 => Instruction::SUBR {
             reg: CpuRegister::B,
         },
@@ -611,6 +633,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xCD => Instruction::CALL {
             addr: mem.get16(argstart),
         },
+        0xCE => Instruction::ADCI {
+            val: mem.get(argstart),
+        },
         0xCF => Instruction::RST { addr: 0x0008 },
         0xD0 => Instruction::RETNC,
         0xD1 => Instruction::POP {
@@ -634,6 +659,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         },
         0xDB => Instruction::ILLEGAL,
         0xDD => Instruction::ILLEGAL,
+        0xDE => Instruction::SBCI {
+            val: mem.get(argstart),
+        },
         0xDF => Instruction::RST { addr: 0x0018 },
         0xE0 => Instruction::STHA {
             addr: mem.get(argstart),
@@ -697,41 +725,118 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
 
 pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instruction {
     match opcode {
-        0x00 => Instruction::RLC { reg: CpuRegister::B },
-        0x01 => Instruction::RLC { reg: CpuRegister::C },
-        0x02 => Instruction::RLC { reg: CpuRegister::D },
-        0x03 => Instruction::RLC { reg: CpuRegister::E },
-        0x04 => Instruction::RLC { reg: CpuRegister::H },
-        0x05 => Instruction::RLC { reg: CpuRegister::L },
-        0x07 => Instruction::RLC { reg: CpuRegister::A },
-        0x08 => Instruction::RRC { reg: CpuRegister::B },
-        0x09 => Instruction::RRC { reg: CpuRegister::C },
-        0x0A => Instruction::RRC { reg: CpuRegister::D },
-        0x0B => Instruction::RRC { reg: CpuRegister::E },
-        0x0C => Instruction::RRC { reg: CpuRegister::H },
-        0x0D => Instruction::RRC { reg: CpuRegister::L },
-        0x0F => Instruction::RRC { reg: CpuRegister::A },
-        0x10 => Instruction::RL { reg: CpuRegister::B },
-        0x11 => Instruction::RL { reg: CpuRegister::C },
-        0x12 => Instruction::RL { reg: CpuRegister::D },
-        0x13 => Instruction::RL { reg: CpuRegister::E },
-        0x14 => Instruction::RL { reg: CpuRegister::H },
-        0x15 => Instruction::RL { reg: CpuRegister::L },
-        0x17 => Instruction::RL { reg: CpuRegister::A },
-        0x18 => Instruction::RR { reg: CpuRegister::B },
-        0x19 => Instruction::RR { reg: CpuRegister::C },
-        0x1A => Instruction::RR { reg: CpuRegister::D },
-        0x1B => Instruction::RR { reg: CpuRegister::E },
-        0x1C => Instruction::RR { reg: CpuRegister::H },
-        0x1D => Instruction::RR { reg: CpuRegister::L },
-        0x1F => Instruction::RR { reg: CpuRegister::A },
-        0x20 => Instruction::SLA { reg: CpuRegister::B },
-        0x21 => Instruction::SLA { reg: CpuRegister::C },
-        0x22 => Instruction::SLA { reg: CpuRegister::D },
-        0x23 => Instruction::SLA { reg: CpuRegister::E },
-        0x24 => Instruction::SLA { reg: CpuRegister::H },
-        0x25 => Instruction::SLA { reg: CpuRegister::L },
-        0x27 => Instruction::SLA { reg: CpuRegister::A },
+        0x00 => Instruction::RLC {
+            reg: CpuRegister::B,
+        },
+        0x01 => Instruction::RLC {
+            reg: CpuRegister::C,
+        },
+        0x02 => Instruction::RLC {
+            reg: CpuRegister::D,
+        },
+        0x03 => Instruction::RLC {
+            reg: CpuRegister::E,
+        },
+        0x04 => Instruction::RLC {
+            reg: CpuRegister::H,
+        },
+        0x05 => Instruction::RLC {
+            reg: CpuRegister::L,
+        },
+        0x07 => Instruction::RLC {
+            reg: CpuRegister::A,
+        },
+        0x08 => Instruction::RRC {
+            reg: CpuRegister::B,
+        },
+        0x09 => Instruction::RRC {
+            reg: CpuRegister::C,
+        },
+        0x0A => Instruction::RRC {
+            reg: CpuRegister::D,
+        },
+        0x0B => Instruction::RRC {
+            reg: CpuRegister::E,
+        },
+        0x0C => Instruction::RRC {
+            reg: CpuRegister::H,
+        },
+        0x0D => Instruction::RRC {
+            reg: CpuRegister::L,
+        },
+        0x0F => Instruction::RRC {
+            reg: CpuRegister::A,
+        },
+        0x10 => Instruction::RL {
+            reg: CpuRegister::B,
+        },
+        0x11 => Instruction::RL {
+            reg: CpuRegister::C,
+        },
+        0x12 => Instruction::RL {
+            reg: CpuRegister::D,
+        },
+        0x13 => Instruction::RL {
+            reg: CpuRegister::E,
+        },
+        0x14 => Instruction::RL {
+            reg: CpuRegister::H,
+        },
+        0x15 => Instruction::RL {
+            reg: CpuRegister::L,
+        },
+        0x17 => Instruction::RL {
+            reg: CpuRegister::A,
+        },
+        0x18 => Instruction::RR {
+            reg: CpuRegister::B,
+        },
+        0x19 => Instruction::RR {
+            reg: CpuRegister::C,
+        },
+        0x1A => Instruction::RR {
+            reg: CpuRegister::D,
+        },
+        0x1B => Instruction::RR {
+            reg: CpuRegister::E,
+        },
+        0x1C => Instruction::RR {
+            reg: CpuRegister::H,
+        },
+        0x1D => Instruction::RR {
+            reg: CpuRegister::L,
+        },
+        0x1F => Instruction::RR {
+            reg: CpuRegister::A,
+        },
+        0x20 => Instruction::SLA {
+            reg: CpuRegister::B,
+        },
+        0x21 => Instruction::SLA {
+            reg: CpuRegister::C,
+        },
+        0x22 => Instruction::SLA {
+            reg: CpuRegister::D,
+        },
+        0x23 => Instruction::SLA {
+            reg: CpuRegister::E,
+        },
+        0x24 => Instruction::SLA {
+            reg: CpuRegister::H,
+        },
+        0x25 => Instruction::SLA {
+            reg: CpuRegister::L,
+        },
+        0x27 => Instruction::SLA {
+            reg: CpuRegister::A,
+        },
+        0x28 => Instruction::SRA { reg: CpuRegister::B },
+        0x29 => Instruction::SRA { reg: CpuRegister::C },
+        0x2A => Instruction::SRA { reg: CpuRegister::D },
+        0x2B => Instruction::SRA { reg: CpuRegister::E },
+        0x2C => Instruction::SRA { reg: CpuRegister::L },
+        0x2D => Instruction::SRA { reg: CpuRegister::H },
+        0x2F => Instruction::SRA { reg: CpuRegister::A },
         0x30 => Instruction::SWAP {
             reg: CpuRegister::B,
         },
@@ -754,200 +859,711 @@ pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instru
         0x37 => Instruction::SWAP {
             reg: CpuRegister::A,
         },
-        0x40 => Instruction::BIT { n: 0, reg: CpuRegister::B },
-        0x41 => Instruction::BIT { n: 0, reg: CpuRegister::C },
-        0x42 => Instruction::BIT { n: 0, reg: CpuRegister::D },
-        0x43 => Instruction::BIT { n: 0, reg: CpuRegister::E },
-        0x44 => Instruction::BIT { n: 0, reg: CpuRegister::H },
-        0x45 => Instruction::BIT { n: 0, reg: CpuRegister::L },
-        0x46 => Instruction::BITA{ n: 0 },
-        0x47 => Instruction::BIT { n: 0, reg: CpuRegister::A },
-        0x48 => Instruction::BIT { n: 1, reg: CpuRegister::B },
-        0x49 => Instruction::BIT { n: 1, reg: CpuRegister::C },
-        0x4A => Instruction::BIT { n: 1, reg: CpuRegister::D },
-        0x4B => Instruction::BIT { n: 1, reg: CpuRegister::E },
-        0x4C => Instruction::BIT { n: 1, reg: CpuRegister::H },
-        0x4D => Instruction::BIT { n: 1, reg: CpuRegister::L },
-        0x4E => Instruction::BITA{ n: 1 },
-        0x4F => Instruction::BIT { n: 1, reg: CpuRegister::A },
-        0x50 => Instruction::BIT { n: 2, reg: CpuRegister::B },
-        0x51 => Instruction::BIT { n: 2, reg: CpuRegister::C },
-        0x52 => Instruction::BIT { n: 2, reg: CpuRegister::D },
-        0x53 => Instruction::BIT { n: 2, reg: CpuRegister::E },
-        0x54 => Instruction::BIT { n: 2, reg: CpuRegister::H },
-        0x55 => Instruction::BIT { n: 2, reg: CpuRegister::L },
-        0x56 => Instruction::BITA{ n: 2 },
-        0x57 => Instruction::BIT { n: 2, reg: CpuRegister::A },
-        0x58 => Instruction::BIT { n: 3, reg: CpuRegister::B },
-        0x59 => Instruction::BIT { n: 3, reg: CpuRegister::C },
-        0x5A => Instruction::BIT { n: 3, reg: CpuRegister::D },
-        0x5B => Instruction::BIT { n: 3, reg: CpuRegister::E },
-        0x5C => Instruction::BIT { n: 3, reg: CpuRegister::H },
-        0x5D => Instruction::BIT { n: 3, reg: CpuRegister::L },
-        0x5E => Instruction::BITA{ n: 3 },
-        0x5F => Instruction::BIT { n: 3, reg: CpuRegister::A },
-        0x60 => Instruction::BIT { n: 4, reg: CpuRegister::B },
-        0x61 => Instruction::BIT { n: 4, reg: CpuRegister::C },
-        0x62 => Instruction::BIT { n: 4, reg: CpuRegister::D },
-        0x63 => Instruction::BIT { n: 4, reg: CpuRegister::E },
-        0x64 => Instruction::BIT { n: 4, reg: CpuRegister::H },
-        0x65 => Instruction::BIT { n: 4, reg: CpuRegister::L },
-        0x66 => Instruction::BITA{ n: 4 },
-        0x67 => Instruction::BIT { n: 4, reg: CpuRegister::A },
-        0x68 => Instruction::BIT { n: 5, reg: CpuRegister::B },
-        0x69 => Instruction::BIT { n: 5, reg: CpuRegister::C },
-        0x6A => Instruction::BIT { n: 5, reg: CpuRegister::D },
-        0x6B => Instruction::BIT { n: 5, reg: CpuRegister::E },
-        0x6C => Instruction::BIT { n: 5, reg: CpuRegister::H },
-        0x6D => Instruction::BIT { n: 5, reg: CpuRegister::L },
-        0x6E => Instruction::BITA{ n: 5 },
-        0x6F => Instruction::BIT { n: 5, reg: CpuRegister::A },
-        0x70 => Instruction::BIT { n: 6, reg: CpuRegister::B },
-        0x71 => Instruction::BIT { n: 6, reg: CpuRegister::C },
-        0x72 => Instruction::BIT { n: 6, reg: CpuRegister::D },
-        0x73 => Instruction::BIT { n: 6, reg: CpuRegister::E },
-        0x74 => Instruction::BIT { n: 6, reg: CpuRegister::H },
-        0x75 => Instruction::BIT { n: 6, reg: CpuRegister::L },
-        0x76 => Instruction::BITA{ n: 6 },
-        0x77 => Instruction::BIT { n: 6, reg: CpuRegister::A },
-        0x78 => Instruction::BIT { n: 7, reg: CpuRegister::B },
-        0x79 => Instruction::BIT { n: 7, reg: CpuRegister::C },
-        0x7A => Instruction::BIT { n: 7, reg: CpuRegister::D },
-        0x7B => Instruction::BIT { n: 7, reg: CpuRegister::E },
-        0x7C => Instruction::BIT { n: 7, reg: CpuRegister::H },
-        0x7D => Instruction::BIT { n: 7, reg: CpuRegister::L },
-        0x7E => Instruction::BITA{ n: 7 },
-        0x7F => Instruction::BIT { n: 7, reg: CpuRegister::A },
+        0x38 => Instruction::SRL { reg: CpuRegister::B },
+        0x39 => Instruction::SRL { reg: CpuRegister::C },
+        0x3A => Instruction::SRL { reg: CpuRegister::D },
+        0x3B => Instruction::SRL { reg: CpuRegister::E },
+        0x3C => Instruction::SRL { reg: CpuRegister::L },
+        0x3D => Instruction::SRL { reg: CpuRegister::H },
+        0x3F => Instruction::SRL { reg: CpuRegister::A },
+        0x40 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::B,
+        },
+        0x41 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::C,
+        },
+        0x42 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::D,
+        },
+        0x43 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::E,
+        },
+        0x44 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::H,
+        },
+        0x45 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::L,
+        },
+        0x46 => Instruction::BITA { n: 0 },
+        0x47 => Instruction::BIT {
+            n: 0,
+            reg: CpuRegister::A,
+        },
+        0x48 => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::B,
+        },
+        0x49 => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::C,
+        },
+        0x4A => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::D,
+        },
+        0x4B => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::E,
+        },
+        0x4C => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::H,
+        },
+        0x4D => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::L,
+        },
+        0x4E => Instruction::BITA { n: 1 },
+        0x4F => Instruction::BIT {
+            n: 1,
+            reg: CpuRegister::A,
+        },
+        0x50 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::B,
+        },
+        0x51 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::C,
+        },
+        0x52 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::D,
+        },
+        0x53 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::E,
+        },
+        0x54 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::H,
+        },
+        0x55 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::L,
+        },
+        0x56 => Instruction::BITA { n: 2 },
+        0x57 => Instruction::BIT {
+            n: 2,
+            reg: CpuRegister::A,
+        },
+        0x58 => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::B,
+        },
+        0x59 => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::C,
+        },
+        0x5A => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::D,
+        },
+        0x5B => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::E,
+        },
+        0x5C => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::H,
+        },
+        0x5D => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::L,
+        },
+        0x5E => Instruction::BITA { n: 3 },
+        0x5F => Instruction::BIT {
+            n: 3,
+            reg: CpuRegister::A,
+        },
+        0x60 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::B,
+        },
+        0x61 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::C,
+        },
+        0x62 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::D,
+        },
+        0x63 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::E,
+        },
+        0x64 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::H,
+        },
+        0x65 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::L,
+        },
+        0x66 => Instruction::BITA { n: 4 },
+        0x67 => Instruction::BIT {
+            n: 4,
+            reg: CpuRegister::A,
+        },
+        0x68 => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::B,
+        },
+        0x69 => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::C,
+        },
+        0x6A => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::D,
+        },
+        0x6B => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::E,
+        },
+        0x6C => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::H,
+        },
+        0x6D => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::L,
+        },
+        0x6E => Instruction::BITA { n: 5 },
+        0x6F => Instruction::BIT {
+            n: 5,
+            reg: CpuRegister::A,
+        },
+        0x70 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::B,
+        },
+        0x71 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::C,
+        },
+        0x72 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::D,
+        },
+        0x73 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::E,
+        },
+        0x74 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::H,
+        },
+        0x75 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::L,
+        },
+        0x76 => Instruction::BITA { n: 6 },
+        0x77 => Instruction::BIT {
+            n: 6,
+            reg: CpuRegister::A,
+        },
+        0x78 => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::B,
+        },
+        0x79 => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::C,
+        },
+        0x7A => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::D,
+        },
+        0x7B => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::E,
+        },
+        0x7C => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::H,
+        },
+        0x7D => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::L,
+        },
+        0x7E => Instruction::BITA { n: 7 },
+        0x7F => Instruction::BIT {
+            n: 7,
+            reg: CpuRegister::A,
+        },
 
-        0x80 => Instruction::RESET { n: 0, reg: CpuRegister::B },
-        0x81 => Instruction::RESET { n: 0, reg: CpuRegister::C },
-        0x82 => Instruction::RESET { n: 0, reg: CpuRegister::D },
-        0x83 => Instruction::RESET { n: 0, reg: CpuRegister::E },
-        0x84 => Instruction::RESET { n: 0, reg: CpuRegister::H },
-        0x85 => Instruction::RESET { n: 0, reg: CpuRegister::L },
-        0x86 => Instruction::RESETA{ n: 0 },
-        0x87 => Instruction::RESET { n: 0, reg: CpuRegister::A },
-        0x88 => Instruction::RESET { n: 1, reg: CpuRegister::B },
-        0x89 => Instruction::RESET { n: 1, reg: CpuRegister::C },
-        0x8A => Instruction::RESET { n: 1, reg: CpuRegister::D },
-        0x8B => Instruction::RESET { n: 1, reg: CpuRegister::E },
-        0x8C => Instruction::RESET { n: 1, reg: CpuRegister::H },
-        0x8D => Instruction::RESET { n: 1, reg: CpuRegister::L },
-        0x8E => Instruction::RESETA{ n: 1 },
-        0x8F => Instruction::RESET { n: 1, reg: CpuRegister::A },
-        0x90 => Instruction::RESET { n: 2, reg: CpuRegister::B },
-        0x91 => Instruction::RESET { n: 2, reg: CpuRegister::C },
-        0x92 => Instruction::RESET { n: 2, reg: CpuRegister::D },
-        0x93 => Instruction::RESET { n: 2, reg: CpuRegister::E },
-        0x94 => Instruction::RESET { n: 2, reg: CpuRegister::H },
-        0x95 => Instruction::RESET { n: 2, reg: CpuRegister::L },
-        0x96 => Instruction::RESETA{ n: 2 },
-        0x97 => Instruction::RESET { n: 2, reg: CpuRegister::A },
-        0x98 => Instruction::RESET { n: 3, reg: CpuRegister::B },
-        0x99 => Instruction::RESET { n: 3, reg: CpuRegister::C },
-        0x9A => Instruction::RESET { n: 3, reg: CpuRegister::D },
-        0x9B => Instruction::RESET { n: 3, reg: CpuRegister::E },
-        0x9C => Instruction::RESET { n: 3, reg: CpuRegister::H },
-        0x9D => Instruction::RESET { n: 3, reg: CpuRegister::L },
-        0x9E => Instruction::RESETA{ n: 3 },
-        0x9F => Instruction::RESET { n: 3, reg: CpuRegister::A },
-        0xA0 => Instruction::RESET { n: 4, reg: CpuRegister::B },
-        0xA1 => Instruction::RESET { n: 4, reg: CpuRegister::C },
-        0xA2 => Instruction::RESET { n: 4, reg: CpuRegister::D },
-        0xA3 => Instruction::RESET { n: 4, reg: CpuRegister::E },
-        0xA4 => Instruction::RESET { n: 4, reg: CpuRegister::H },
-        0xA5 => Instruction::RESET { n: 4, reg: CpuRegister::L },
-        0xA6 => Instruction::RESETA{ n: 4 },
-        0xA7 => Instruction::RESET { n: 4, reg: CpuRegister::A },
-        0xA8 => Instruction::RESET { n: 5, reg: CpuRegister::B },
-        0xA9 => Instruction::RESET { n: 5, reg: CpuRegister::C },
-        0xAA => Instruction::RESET { n: 5, reg: CpuRegister::D },
-        0xAB => Instruction::RESET { n: 5, reg: CpuRegister::E },
-        0xAC => Instruction::RESET { n: 5, reg: CpuRegister::H },
-        0xAD => Instruction::RESET { n: 5, reg: CpuRegister::L },
-        0xAE => Instruction::RESETA{ n: 5 },
-        0xAF => Instruction::RESET { n: 5, reg: CpuRegister::A },
-        0xB0 => Instruction::RESET { n: 6, reg: CpuRegister::B },
-        0xB1 => Instruction::RESET { n: 6, reg: CpuRegister::C },
-        0xB2 => Instruction::RESET { n: 6, reg: CpuRegister::D },
-        0xB3 => Instruction::RESET { n: 6, reg: CpuRegister::E },
-        0xB4 => Instruction::RESET { n: 6, reg: CpuRegister::H },
-        0xB5 => Instruction::RESET { n: 6, reg: CpuRegister::L },
-        0xB6 => Instruction::RESETA{ n: 6 },
-        0xB7 => Instruction::RESET { n: 6, reg: CpuRegister::A },
-        0xB8 => Instruction::RESET { n: 7, reg: CpuRegister::B },
-        0xB9 => Instruction::RESET { n: 7, reg: CpuRegister::C },
-        0xBA => Instruction::RESET { n: 7, reg: CpuRegister::D },
-        0xBB => Instruction::RESET { n: 7, reg: CpuRegister::E },
-        0xBC => Instruction::RESET { n: 7, reg: CpuRegister::H },
-        0xBD => Instruction::RESET { n: 7, reg: CpuRegister::L },
-        0xBE => Instruction::RESETA{ n: 7 },
-        0xBF => Instruction::RESET { n: 7, reg: CpuRegister::A },
+        0x80 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::B,
+        },
+        0x81 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::C,
+        },
+        0x82 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::D,
+        },
+        0x83 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::E,
+        },
+        0x84 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::H,
+        },
+        0x85 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::L,
+        },
+        0x86 => Instruction::RESETA { n: 0 },
+        0x87 => Instruction::RESET {
+            n: 0,
+            reg: CpuRegister::A,
+        },
+        0x88 => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::B,
+        },
+        0x89 => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::C,
+        },
+        0x8A => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::D,
+        },
+        0x8B => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::E,
+        },
+        0x8C => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::H,
+        },
+        0x8D => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::L,
+        },
+        0x8E => Instruction::RESETA { n: 1 },
+        0x8F => Instruction::RESET {
+            n: 1,
+            reg: CpuRegister::A,
+        },
+        0x90 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::B,
+        },
+        0x91 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::C,
+        },
+        0x92 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::D,
+        },
+        0x93 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::E,
+        },
+        0x94 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::H,
+        },
+        0x95 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::L,
+        },
+        0x96 => Instruction::RESETA { n: 2 },
+        0x97 => Instruction::RESET {
+            n: 2,
+            reg: CpuRegister::A,
+        },
+        0x98 => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::B,
+        },
+        0x99 => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::C,
+        },
+        0x9A => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::D,
+        },
+        0x9B => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::E,
+        },
+        0x9C => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::H,
+        },
+        0x9D => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::L,
+        },
+        0x9E => Instruction::RESETA { n: 3 },
+        0x9F => Instruction::RESET {
+            n: 3,
+            reg: CpuRegister::A,
+        },
+        0xA0 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::B,
+        },
+        0xA1 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::C,
+        },
+        0xA2 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::D,
+        },
+        0xA3 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::E,
+        },
+        0xA4 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::H,
+        },
+        0xA5 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::L,
+        },
+        0xA6 => Instruction::RESETA { n: 4 },
+        0xA7 => Instruction::RESET {
+            n: 4,
+            reg: CpuRegister::A,
+        },
+        0xA8 => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::B,
+        },
+        0xA9 => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::C,
+        },
+        0xAA => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::D,
+        },
+        0xAB => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::E,
+        },
+        0xAC => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::H,
+        },
+        0xAD => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::L,
+        },
+        0xAE => Instruction::RESETA { n: 5 },
+        0xAF => Instruction::RESET {
+            n: 5,
+            reg: CpuRegister::A,
+        },
+        0xB0 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::B,
+        },
+        0xB1 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::C,
+        },
+        0xB2 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::D,
+        },
+        0xB3 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::E,
+        },
+        0xB4 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::H,
+        },
+        0xB5 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::L,
+        },
+        0xB6 => Instruction::RESETA { n: 6 },
+        0xB7 => Instruction::RESET {
+            n: 6,
+            reg: CpuRegister::A,
+        },
+        0xB8 => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::B,
+        },
+        0xB9 => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::C,
+        },
+        0xBA => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::D,
+        },
+        0xBB => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::E,
+        },
+        0xBC => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::H,
+        },
+        0xBD => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::L,
+        },
+        0xBE => Instruction::RESETA { n: 7 },
+        0xBF => Instruction::RESET {
+            n: 7,
+            reg: CpuRegister::A,
+        },
 
-        0xC0 => Instruction::SET { n: 0, reg: CpuRegister::B },
-        0xC1 => Instruction::SET { n: 0, reg: CpuRegister::C },
-        0xC2 => Instruction::SET { n: 0, reg: CpuRegister::D },
-        0xC3 => Instruction::SET { n: 0, reg: CpuRegister::E },
-        0xC4 => Instruction::SET { n: 0, reg: CpuRegister::H },
-        0xC5 => Instruction::SET { n: 0, reg: CpuRegister::L },
-        0xC6 => Instruction::SETA{ n: 0 },
-        0xC7 => Instruction::SET { n: 0, reg: CpuRegister::A },
-        0xC8 => Instruction::SET { n: 1, reg: CpuRegister::B },
-        0xC9 => Instruction::SET { n: 1, reg: CpuRegister::C },
-        0xCA => Instruction::SET { n: 1, reg: CpuRegister::D },
-        0xCB => Instruction::SET { n: 1, reg: CpuRegister::E },
-        0xCC => Instruction::SET { n: 1, reg: CpuRegister::H },
-        0xCD => Instruction::SET { n: 1, reg: CpuRegister::L },
-        0xCE => Instruction::SETA{ n: 1 },
-        0xCF => Instruction::SET { n: 1, reg: CpuRegister::A },
-        0xD0 => Instruction::SET { n: 2, reg: CpuRegister::B },
-        0xD1 => Instruction::SET { n: 2, reg: CpuRegister::C },
-        0xD2 => Instruction::SET { n: 2, reg: CpuRegister::D },
-        0xD3 => Instruction::SET { n: 2, reg: CpuRegister::E },
-        0xD4 => Instruction::SET { n: 2, reg: CpuRegister::H },
-        0xD5 => Instruction::SET { n: 2, reg: CpuRegister::L },
-        0xD6 => Instruction::SETA{ n: 2 },
-        0xD7 => Instruction::SET { n: 2, reg: CpuRegister::A },
-        0xD8 => Instruction::SET { n: 3, reg: CpuRegister::B },
-        0xD9 => Instruction::SET { n: 3, reg: CpuRegister::C },
-        0xDA => Instruction::SET { n: 3, reg: CpuRegister::D },
-        0xDB => Instruction::SET { n: 3, reg: CpuRegister::E },
-        0xDC => Instruction::SET { n: 3, reg: CpuRegister::H },
-        0xDD => Instruction::SET { n: 3, reg: CpuRegister::L },
-        0xDE => Instruction::SETA{ n: 3 },
-        0xDF => Instruction::SET { n: 3, reg: CpuRegister::A },
-        0xE0 => Instruction::SET { n: 4, reg: CpuRegister::B },
-        0xE1 => Instruction::SET { n: 4, reg: CpuRegister::C },
-        0xE2 => Instruction::SET { n: 4, reg: CpuRegister::D },
-        0xE3 => Instruction::SET { n: 4, reg: CpuRegister::E },
-        0xE4 => Instruction::SET { n: 4, reg: CpuRegister::H },
-        0xE5 => Instruction::SET { n: 4, reg: CpuRegister::L },
-        0xE6 => Instruction::SETA{ n: 4 },
-        0xE7 => Instruction::SET { n: 4, reg: CpuRegister::A },
-        0xE8 => Instruction::SET { n: 5, reg: CpuRegister::B },
-        0xE9 => Instruction::SET { n: 5, reg: CpuRegister::C },
-        0xEA => Instruction::SET { n: 5, reg: CpuRegister::D },
-        0xEB => Instruction::SET { n: 5, reg: CpuRegister::E },
-        0xEC => Instruction::SET { n: 5, reg: CpuRegister::H },
-        0xED => Instruction::SET { n: 5, reg: CpuRegister::L },
-        0xEE => Instruction::SETA{ n: 5 },
-        0xEF => Instruction::SET { n: 5, reg: CpuRegister::A },
-        0xF0 => Instruction::SET { n: 6, reg: CpuRegister::B },
-        0xF1 => Instruction::SET { n: 6, reg: CpuRegister::C },
-        0xF2 => Instruction::SET { n: 6, reg: CpuRegister::D },
-        0xF3 => Instruction::SET { n: 6, reg: CpuRegister::E },
-        0xF4 => Instruction::SET { n: 6, reg: CpuRegister::H },
-        0xF5 => Instruction::SET { n: 6, reg: CpuRegister::L },
-        0xF6 => Instruction::SETA{ n: 6 },
-        0xF7 => Instruction::SET { n: 6, reg: CpuRegister::A },
-        0xF8 => Instruction::SET { n: 7, reg: CpuRegister::B },
-        0xF9 => Instruction::SET { n: 7, reg: CpuRegister::C },
-        0xFA => Instruction::SET { n: 7, reg: CpuRegister::D },
-        0xFB => Instruction::SET { n: 7, reg: CpuRegister::E },
-        0xFC => Instruction::SET { n: 7, reg: CpuRegister::H },
-        0xFD => Instruction::SET { n: 7, reg: CpuRegister::L },
-        0xFE => Instruction::SETA{ n: 7 },
-        0xFF => Instruction::SET { n: 7, reg: CpuRegister::A },
+        0xC0 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::B,
+        },
+        0xC1 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::C,
+        },
+        0xC2 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::D,
+        },
+        0xC3 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::E,
+        },
+        0xC4 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::H,
+        },
+        0xC5 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::L,
+        },
+        0xC6 => Instruction::SETA { n: 0 },
+        0xC7 => Instruction::SET {
+            n: 0,
+            reg: CpuRegister::A,
+        },
+        0xC8 => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::B,
+        },
+        0xC9 => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::C,
+        },
+        0xCA => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::D,
+        },
+        0xCB => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::E,
+        },
+        0xCC => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::H,
+        },
+        0xCD => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::L,
+        },
+        0xCE => Instruction::SETA { n: 1 },
+        0xCF => Instruction::SET {
+            n: 1,
+            reg: CpuRegister::A,
+        },
+        0xD0 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::B,
+        },
+        0xD1 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::C,
+        },
+        0xD2 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::D,
+        },
+        0xD3 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::E,
+        },
+        0xD4 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::H,
+        },
+        0xD5 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::L,
+        },
+        0xD6 => Instruction::SETA { n: 2 },
+        0xD7 => Instruction::SET {
+            n: 2,
+            reg: CpuRegister::A,
+        },
+        0xD8 => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::B,
+        },
+        0xD9 => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::C,
+        },
+        0xDA => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::D,
+        },
+        0xDB => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::E,
+        },
+        0xDC => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::H,
+        },
+        0xDD => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::L,
+        },
+        0xDE => Instruction::SETA { n: 3 },
+        0xDF => Instruction::SET {
+            n: 3,
+            reg: CpuRegister::A,
+        },
+        0xE0 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::B,
+        },
+        0xE1 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::C,
+        },
+        0xE2 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::D,
+        },
+        0xE3 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::E,
+        },
+        0xE4 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::H,
+        },
+        0xE5 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::L,
+        },
+        0xE6 => Instruction::SETA { n: 4 },
+        0xE7 => Instruction::SET {
+            n: 4,
+            reg: CpuRegister::A,
+        },
+        0xE8 => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::B,
+        },
+        0xE9 => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::C,
+        },
+        0xEA => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::D,
+        },
+        0xEB => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::E,
+        },
+        0xEC => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::H,
+        },
+        0xED => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::L,
+        },
+        0xEE => Instruction::SETA { n: 5 },
+        0xEF => Instruction::SET {
+            n: 5,
+            reg: CpuRegister::A,
+        },
+        0xF0 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::B,
+        },
+        0xF1 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::C,
+        },
+        0xF2 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::D,
+        },
+        0xF3 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::E,
+        },
+        0xF4 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::H,
+        },
+        0xF5 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::L,
+        },
+        0xF6 => Instruction::SETA { n: 6 },
+        0xF7 => Instruction::SET {
+            n: 6,
+            reg: CpuRegister::A,
+        },
+        0xF8 => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::B,
+        },
+        0xF9 => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::C,
+        },
+        0xFA => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::D,
+        },
+        0xFB => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::E,
+        },
+        0xFC => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::H,
+        },
+        0xFD => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::L,
+        },
+        0xFE => Instruction::SETA { n: 7 },
+        0xFF => Instruction::SET {
+            n: 7,
+            reg: CpuRegister::A,
+        },
 
         _ => panic!("Unknown extended opcode 0xCB{:2X}", opcode),
     }
