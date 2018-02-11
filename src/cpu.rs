@@ -132,11 +132,11 @@ impl Cpu {
             }
         };
 
-        println!(
+        /*println!(
             "Interrupt! {:?} State prior to interrupt: {}",
             active,
             self.print_state()
-        );
+        );*/
 
         self.sp -= 2;
         mem.set16(self.sp, self.pc);

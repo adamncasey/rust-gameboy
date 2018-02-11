@@ -138,7 +138,7 @@ impl Gpu {
 
         if lcdc & SPRITE_DISP_BIT != 0 {
             let sprite_height: u8 = get_sprite_size(lcdc);
-            draw_sprites(line, mem, sprite_height, tiles, rgba);
+            draw_sprites(line, mem, sprite_height, 0x8000, rgba);
         }
         else {
             //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
@@ -169,7 +169,7 @@ fn draw_background(
     let vtile = bgy / 8;
 
     if vtile >= 32 {
-        println!("reached vend of tile {} {}", vtile, line);
+        //println!("reached vend of tile {} {}", vtile, line);
         return;
     }
 
@@ -181,7 +181,7 @@ fn draw_background(
         let bgx = (i as u16) + (scx as u16);
         let htile = bgx / 8;
         if htile >= 32 {
-            println!("reached hend of tile {} {} {}", htile, line, i);
+            //println!("reached hend of tile {} {} {}", htile, line, i);
             return;
         }
 
@@ -216,7 +216,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
         }
 
         // look up tile pixel data
-        let ty = (s.y - line as i16) as u16; // TODO yflip
+        let ty = (s.y - line as u16 as i16) as u16; // TODO yflip
 
         // TODO xflip:
         for tx in 0..8 {
@@ -233,7 +233,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
                 continue;
             }
             // draw pixel
-            let tilerow = get_tile_row_data(mem, tiledata, s.tile as u32 as i32, ty);
+            let tilerow = get_tile_row_data(mem, tiledata, s.tile as u32 as i32, ty % 8);
             let colour = get_tile_colour(tilerow, tx as u8, s.palette);
 
             // Is this pixel transparent?
@@ -266,16 +266,16 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
     let options = mem.get(addr + 3);
 
     Sprite {
-        y: mem.get(addr) as i16 - 16,
-        x: mem.get(addr + 1) as i16 - 8,
-        tile: mem.get(addr + 3),
+        y: mem.get(addr) as u16 as i16 - 16,
+        x: mem.get(addr + 1) as u16 as i16 - 8,
+        tile: mem.get(addr + 2),
         priority: options & 0b1000000 != 0,
         yflip: options & 0b100000 != 0,
         xflip: options & 0b10000 != 0,
         palette: if options & 0b1000 != 0 {
-            palettes.0
-        } else {
             palettes.1
+        } else {
+            palettes.0
         },
     }
 }

@@ -22,8 +22,8 @@ pub struct Input {
 impl Input {
     pub fn new() -> Input {
         Input {
-            col1: 0b00010000,
-            col2: 0b00100000,
+            col1: 0b11101111,
+            col2: 0b11011111,
             active_col1: true,
             has_interrupt: false,
         }
@@ -76,7 +76,7 @@ impl Input {
     }
 
     pub fn update(&mut self, mem: &mut Memory) {
-        self.active_col1 = (mem.get(0xFF00) & 0x10) != 0;
+        self.active_col1 = (mem.get(0xFF00) & 0x10) == 0;
 
         mem.set(
             0xFF00,
