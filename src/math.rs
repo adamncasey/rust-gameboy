@@ -8,7 +8,7 @@ pub fn subtract(cpu: &mut Cpu, val: u8) {
     cpu.set(CpuRegister::A, result);
 
     let z = result == 0;
-    let h = false; // TODO
+    let h = ((lhs & 0xf) as i8 - (val & 0xf) as i8) < 0;
     let c = lhs > val;
 
     cpu.set_flags(z, true, h, c);
@@ -22,7 +22,7 @@ pub fn add(cpu: &mut Cpu, val: u8) {
     cpu.set(CpuRegister::A, result);
 
     let z = result == 0;
-    let h = false; // TODO
+    let h = ((lhs&0xf).wrapping_add(val&0xf) & 0x10) != 0;
     let c = result <= lhs && (val != 0);
 
     cpu.set_flags(z, true, h, c);
@@ -36,7 +36,7 @@ pub fn add16(cpu: &mut Cpu, reg: Cpu16Register, val: u16) {
     cpu.set16(reg, result);
 
     let z = cpu.z_flag();
-    let h = false; // TODO
+    let h = ((lhs&0xf00).wrapping_add(val&0xf00) & 0x10) != 0;
     let c = result <= lhs && (val != 0);
     cpu.set_flags(z, false, h, c);
 }
@@ -45,7 +45,7 @@ pub fn increment(cpu: &mut Cpu, val: u8) -> u8 {
     let newval = val.wrapping_add(1);
 
     let z = newval == 0;
-    let h = false; // TODO
+    let h = (val & 0xf) == 0xf;
     let c: bool = cpu.c_flag() == 1;
 
     cpu.set_flags(z, false, h, c);
@@ -59,7 +59,7 @@ pub fn increment16(cpu: &mut Cpu, reg: Cpu16Register) {
     cpu.set16(reg, newval);
 
     let z = newval == 0;
-    let h = false; // TODO
+    let h = (val & 0xf00) == 0xf00;
     let c: bool = cpu.c_flag() == 1;
 
     cpu.set_flags(z, false, h, c);
@@ -69,7 +69,7 @@ pub fn decrement(cpu: &mut Cpu, val: u8) -> u8 {
     let newval = val.wrapping_sub(1);
 
     let z = newval == 0;
-    let h = false; // TODO
+    let h = (newval & 0xf) == 0xf;
     let c: bool = cpu.c_flag() == 1;
 
     cpu.set_flags(z, true, h, c);
@@ -83,7 +83,7 @@ pub fn decrement16(cpu: &mut Cpu, reg: Cpu16Register) {
     cpu.set16(reg, newval);
 
     let z = newval == 0;
-    let h = false;
+    let h = (newval & 0xf00) == 0xf00;
     let c: bool = cpu.c_flag() == 1;
 
     cpu.set_flags(z, true, h, c);
@@ -126,7 +126,7 @@ pub fn compare(cpu: &mut Cpu, val: u8) {
 
     let z = a == val;
     let n = true;
-    let h = false; // TODO
+    let h = ((a & 0xf) as i8 - (val & 0xf) as i8) < 0;
     let c = a < val;
 
     cpu.set_flags(z, n, h, c);
@@ -230,4 +230,23 @@ pub fn rlc(cpu: &mut Cpu, reg: CpuRegister) {
     cpu.set_flags(res == 0, false, false, c);
 
     cpu.set(reg, res);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set() {
+        assert_eq!(0x01, set(0, 0));
+        assert_eq!(0x02, set(0, 1));
+        assert_eq!(0x04, set(0, 2));
+        assert_eq!(0x08, set(0, 3));
+        assert_eq!(0x10, set(0, 4));
+        assert_eq!(0x20, set(0, 5));
+        assert_eq!(0x40, set(0, 6));
+        assert_eq!(0x80, set(0, 7));
+        
+        assert_eq!(0x01, set(1, 0));
+    }
 }

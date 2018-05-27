@@ -93,10 +93,7 @@ impl Memory {
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }
     }
-    fn special(&mut self, addr: u16, val: u8) {
-        let source: u16 = (val as u16) << 8;
-        let target: u16 = 0xFE00;
-
+    fn special(&mut self, addr: u16, val: u8) {       
         // TODO Handle input register
         match addr {
             0xFF00 => {
@@ -106,6 +103,8 @@ impl Memory {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
                 //println!("DMA from {:x}", source);
+                let source: u16 = (val as u16) << 8;
+                let target: u16 = 0xFE00;
                 for i in 0..160 {
                     let val: u8 = self.get(source + i);
                     self.set(target + i, val);

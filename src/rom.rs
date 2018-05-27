@@ -27,9 +27,14 @@ impl Rom {
         file.read_to_end(&mut rom.rom_contents)?;
 
         // Copy out game_title
-        rom.game_title = String::from(
-            str::from_utf8(&rom.rom_contents[ROM_TITLE_START..ROM_TITLE_END]).unwrap(),
-        );
+        let bytes = &rom.rom_contents[ROM_TITLE_START..ROM_TITLE_END];
+        rom.game_title = String::from(match(str::from_utf8(bytes)) {
+            Result::Ok(val) => val,
+            Result::Err(err) => {
+                println!("Error loading rom title {:?}", bytes);
+                "Default title"
+            }
+        });
 
         // Copy out rom_type
         rom.rom_type = rom.rom_contents[ROM_TYPE_OFFSET as usize];

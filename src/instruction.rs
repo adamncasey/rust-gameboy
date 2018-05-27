@@ -65,6 +65,18 @@ pub enum Instruction {
     CALL {
         addr: u16,
     },
+    CALLNZ {
+        addr: u16,
+    },
+    CALLNC {
+        addr: u16
+    },
+    CALLZ {
+        addr: u16
+    },
+    CALLC {
+        addr: u16
+    },
     RET,
     RETNZ,
     RETZ,
@@ -261,6 +273,10 @@ impl Instruction {
             Instruction::JRNC { .. } => 2,
             Instruction::JRC { .. } => 2,
             Instruction::CALL { .. } => 3,
+            Instruction::CALLNC { .. } => 3,
+            Instruction::CALLNZ { .. } => 3,
+            Instruction::CALLC { .. } => 3,
+            Instruction::CALLZ { .. } => 3,
             Instruction::RET => 1,
             Instruction::RETNZ => 1,
             Instruction::RETZ => 1,
@@ -452,6 +468,38 @@ impl Instruction {
                 cpu.jump(addr);
                 cycles = 24;
             }
+            Instruction::CALLNZ { addr } => if !cpu.z_flag() {
+                cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                cpu.jump(addr);
+                cycles = 24;
+            } else {
+                cycles = 12;
+            }
+            Instruction::CALLNC { addr } => if cpu.c_flag() == 0 {
+                cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                cpu.jump(addr);
+                cycles = 24;
+            } else {
+                cycles = 12;
+            }
+            Instruction::CALLZ { addr } => if cpu.z_flag() {
+                cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                cpu.jump(addr);
+                cycles = 24;
+            } else {
+                cycles = 12;
+            }
+            Instruction::CALLC { addr } => if cpu.c_flag() == 1 {
+                cpu.sp -= 2;
+                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                cpu.jump(addr);
+                cycles = 24;
+            } else {
+                cycles = 12;
+            }
             Instruction::RET => {
                 cpu.ret(mem);
                 cycles = 16;
@@ -551,7 +599,7 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::SBCI { val } => {
-                let newval = val + cpu.c_flag();
+                let newval = val.wrapping_add(cpu.c_flag());
                 math::subtract(cpu, newval);
                 cycles = 8;
             }
@@ -589,8 +637,8 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::ADCI { val } => {
-                // TODO Carry flag & overflow interaction?
-                math::add(cpu, val + cpu.c_flag());
+                // TODO Carry flag interaction?
+                math::add(cpu, val.wrapping_add(cpu.c_flag()));
                 cycles = 8;
             }
             Instruction::XORR { reg } => {

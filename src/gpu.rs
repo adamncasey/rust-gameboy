@@ -165,7 +165,7 @@ fn draw_background(
     rgba: &mut [u8],
 ) {
     let scy: u8 = mem.get(0xFF42);
-    let bgy = (line + scy) as u16;
+    let bgy = (line as u16).wrapping_add(scy as u16);
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -269,7 +269,7 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
         y: mem.get(addr) as u16 as i16 - 16,
         x: mem.get(addr + 1) as u16 as i16 - 8,
         tile: mem.get(addr + 2),
-        priority: options & 0b1000000 != 0,
+        priority: options & 0b1000000 == 0,
         yflip: options & 0b100000 != 0,
         xflip: options & 0b10000 != 0,
         palette: if options & 0b1000 != 0 {

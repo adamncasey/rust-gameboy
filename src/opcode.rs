@@ -618,6 +618,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xC3 => Instruction::JP {
             addr: mem.get16(argstart),
         },
+        0xC4 => Instruction::CALLNZ {
+            addr: mem.get16(argstart),
+        },
         0xC5 => Instruction::PUSH {
             reg: Cpu16Register::BC,
         },
@@ -628,6 +631,10 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xC8 => Instruction::RETZ,
         0xC9 => Instruction::RET,
         0xCA => Instruction::JPZ {
+            addr: mem.get16(argstart),
+        },
+        // 0xCB extension instructions
+        0xCC => Instruction::CALLZ {
             addr: mem.get16(argstart),
         },
         0xCD => Instruction::CALL {
@@ -645,6 +652,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             addr: mem.get16(argstart),
         },
         0xD3 => Instruction::ILLEGAL,
+        0xD4 => Instruction::CALLNC {
+            addr: mem.get16(argstart),
+        },
         0xD5 => Instruction::PUSH {
             reg: Cpu16Register::DE,
         },
@@ -658,6 +668,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             addr: mem.get16(argstart),
         },
         0xDB => Instruction::ILLEGAL,
+        0xDC => Instruction::CALLC {
+            addr: mem.get16(argstart),
+        },
         0xDD => Instruction::ILLEGAL,
         0xDE => Instruction::SBCI {
             val: mem.get(argstart),

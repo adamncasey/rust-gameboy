@@ -19,7 +19,7 @@ impl GameBoy {
         let cartridge: Rom = Rom::load(rom_filename).unwrap();
 
         if cartridge.rom_type != 0 {
-            panic!("ROM type unsupported {}", cartridge.rom_type);
+            println!("ROM type unsupported {}", cartridge.rom_type);
         }
 
         GameBoy {
