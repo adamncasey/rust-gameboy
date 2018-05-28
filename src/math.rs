@@ -187,9 +187,7 @@ pub fn sra(cpu: &mut Cpu, val: u8) -> u8 {
     res
 }
 
-pub fn rr(cpu: &mut Cpu, reg: CpuRegister) {
-    let val = cpu.get(reg);
-
+pub fn rr(cpu: &mut Cpu, val: u8) -> u8{
     let old_c = cpu.c_flag() << 7;
     let c: bool = (val & 0b1) != 0;
 
@@ -198,11 +196,9 @@ pub fn rr(cpu: &mut Cpu, reg: CpuRegister) {
 
     cpu.set_flags(res == 0, false, false, c);
 
-    cpu.set(reg, res);
+    res
 }
-pub fn rl(cpu: &mut Cpu, reg: CpuRegister) {
-    let val = cpu.get(reg);
-
+pub fn rl(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = cpu.c_flag();
     let c: bool = (val & 0b10000000) != 0;
 
@@ -211,25 +207,21 @@ pub fn rl(cpu: &mut Cpu, reg: CpuRegister) {
 
     cpu.set_flags(res == 0, false, false, c);
 
-    cpu.set(reg, res);
+    res
 }
-pub fn rrc(cpu: &mut Cpu, reg: CpuRegister) {
-    let val = cpu.get(reg);
-
+pub fn rrc(cpu: &mut Cpu, val: u8) -> u8 {
     let c: bool = (val & 0b1) != 0;
     let res = val.rotate_right(1);
     cpu.set_flags(res == 0, false, false, c);
 
-    cpu.set(reg, res);
+    res
 }
-pub fn rlc(cpu: &mut Cpu, reg: CpuRegister) {
-    let val = cpu.get(reg);
-
+pub fn rlc(cpu: &mut Cpu, val: u8) -> u8 {
     let c: bool = (val & 0b10000000) != 0;
     let res = val.rotate_left(1);
     cpu.set_flags(res == 0, false, false, c);
 
-    cpu.set(reg, res);
+    res
 }
 
 #[cfg(test)]

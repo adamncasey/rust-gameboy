@@ -216,8 +216,11 @@ pub enum Instruction {
     SLA {
         reg: CpuRegister,
     },
+    SLAA,
     SRL { reg: CpuRegister },
+    SRLA,
     SRA { reg: CpuRegister },
+    SRAA,
     RLCA,
     RLA,
     RRCA,
@@ -225,15 +228,20 @@ pub enum Instruction {
     RLC {
         reg: CpuRegister,
     },
+    RLCHL,
     RL {
         reg: CpuRegister,
     },
+    RLHL,
     RRC {
         reg: CpuRegister,
     },
+    RRCHL,
     RR {
         reg: CpuRegister,
     },
+    RRHL,
+    SCF,
 
     ILLEGAL,
 }
@@ -337,16 +345,24 @@ impl Instruction {
             Instruction::RESET { .. } => 2,
             Instruction::RESETA { .. } => 2,
             Instruction::SLA { .. } => 2,
+            Instruction::SLAA => 2,
             Instruction::SRL { .. } => 2,
+            Instruction::SRLA => 2,
             Instruction::SRA { .. } => 2,
+            Instruction::SRAA => 2,
             Instruction::RLCA => 1,
             Instruction::RRCA => 1,
             Instruction::RLA => 1,
             Instruction::RRA => 1,
             Instruction::RLC { .. } => 2,
+            Instruction::RLCHL => 2,
             Instruction::RRC { .. } => 2,
+            Instruction::RRCHL => 2,
             Instruction::RL { .. } => 2,
+            Instruction::RLHL => 2,
             Instruction::RR { .. } => 2,
+            Instruction::RRHL => 2,
+            Instruction::SCF => 1,
 
             Instruction::ILLEGAL => panic!("Illegal instruction"),
         }
@@ -803,11 +819,23 @@ impl Instruction {
                 cpu.set(reg, newval);
                 cycles = 8;
             }
+            Instruction::SLAA => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::sla(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
+            }
             Instruction::SRL { reg } => {
                 let val = cpu.get(reg);
                 let newval = math::srl(cpu, val);
                 cpu.set(reg, newval);
                 cycles = 8;
+            }
+            Instruction::SRLA => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::srl(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
             }
             Instruction::SRA { reg } => {
                 let val = cpu.get(reg);
@@ -815,36 +843,78 @@ impl Instruction {
                 cpu.set(reg, newval);
                 cycles = 8;
             }
+            Instruction::SRAA => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::sra(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
+            }
             Instruction::RLCA => {
-                math::rlc(cpu, CpuRegister::A);
+                let newval = math::rlc(cpu, cpu.get(CpuRegister::A));
+                cpu.set(CpuRegister::A, newval);
                 cycles = 4;
             }
             Instruction::RRCA => {
-                math::rrc(cpu, CpuRegister::A);
+                let newval = math::rrc(cpu, cpu.get(CpuRegister::A));
+                cpu.set(CpuRegister::A, newval);
                 cycles = 4;
             }
             Instruction::RLA => {
-                math::rl(cpu, CpuRegister::A);
+                let newval = math::rl(cpu, cpu.get(CpuRegister::A));
+                cpu.set(CpuRegister::A, newval);
                 cycles = 4;
             }
             Instruction::RRA => {
-                math::rr(cpu, CpuRegister::A);
+                let newval = math::rr(cpu, cpu.get(CpuRegister::A));
+                cpu.set(CpuRegister::A, newval);
                 cycles = 4;
             }
             Instruction::RLC { reg } => {
-                math::rlc(cpu, reg);
-                cycles = 4;
+                let newval = math::rlc(cpu, cpu.get(reg));
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::RLCHL => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::rlc(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
             }
             Instruction::RRC { reg } => {
-                math::rrc(cpu, reg);
-                cycles = 4;
+                let newval = math::rrc(cpu, cpu.get(reg));
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::RRCHL => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::rrc(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
             }
             Instruction::RL { reg } => {
-                math::rl(cpu, reg);
-                cycles = 4;
+                let newval = math::rl(cpu, cpu.get(reg));
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::RLHL => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::rl(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
             }
             Instruction::RR { reg } => {
-                math::rr(cpu, reg);
+                let newval = math::rr(cpu, cpu.get(reg));
+                cpu.set(reg, newval);
+                cycles = 8;
+            }
+            Instruction::RRHL => {
+                let addr = cpu.get16(Cpu16Register::HL);
+                let newval = math::rr(cpu, mem.get(addr));
+                mem.set(addr, newval);
+                cycles = 16;
+            }
+            Instruction::SCF => {
+                cpu.set_flags(cpu.z_flag(), false, false, true);
                 cycles = 4;
             }
         };
