@@ -241,4 +241,9 @@ mod tests {
         
         assert_eq!(0x01, set(1, 0));
     }
+
+    #[test]
+    fn test_cast() {
+        assert_eq!(255, (0xFF as u8) as i16);
+    }
 }

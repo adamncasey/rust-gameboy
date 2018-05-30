@@ -138,7 +138,7 @@ impl Gpu {
 
         if lcdc & SPRITE_DISP_BIT != 0 {
             let sprite_height: u8 = get_sprite_size(lcdc);
-            draw_sprites(line, mem, sprite_height, 0x8000, rgba);
+            draw_sprites(line, mem, sprite_height, 0x8000, bg_win_colours, rgba);
         }
         else {
             //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
@@ -165,7 +165,7 @@ fn draw_background(
     rgba: &mut [u8],
 ) {
     let scy: u8 = mem.get(0xFF42);
-    let bgy = (line as u16).wrapping_add(scy as u16);
+    let bgy = (line as u16).wrapping_add(scy as u16) % 256;
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -178,7 +178,7 @@ fn draw_background(
     let scx: u8 = mem.get(0xFF43);
 
     for i in 0..(GB_HSIZE + 1) {
-        let bgx = (i as u16) + (scx as u16);
+        let bgx = ((i as u16) + (scx as u16)) % 256;
         let htile = bgx / 8;
         if htile >= 32 {
             //println!("reached hend of tile {} {} {}", htile, line, i);
@@ -187,7 +187,7 @@ fn draw_background(
 
         let tx: u8 = (bgx % 8) as u8;
 
-        let mut tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
+        let tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
 
         let tilenum: i32 = if !bgmap {
             (tilenumtemp as i8) as i32
@@ -198,14 +198,16 @@ fn draw_background(
         // TODO SLOW draw all eight pixels at once.
         let tilerow = get_tile_row_data(mem, tiledata, tilenum, ty);
         let colour = get_tile_colour(tilerow, tx, bgp);
+        let pixel = apply_palette(colour, bgp);
 
         let rgba_start = ((line as usize) * GB_HSIZE + i as usize) * 4;
-        set_pixel(rgba, rgba_start, colour);
+        set_pixel(rgba, rgba_start, pixel);
     }
 }
 
-fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: &mut [u8]) {
+fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, bgp: u8, rgba: &mut [u8]) {
     let palettes = (mem.get(0xFF48), mem.get(0xFF49));
+    let bgcolouroverdraw = apply_palette(0, bgp);
     // for each sprite
     for i in 0..40 {
         let s = load_sprite(mem, i, palettes);
@@ -228,18 +230,19 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, rgba: 
             let rgba_start = (line as usize * GB_HSIZE + x as usize) * 4;
 
             // Is priority bit set or is the bg value zero?
-            if !s.priority && rgba[rgba_start] != 255 {
+            if !s.priority && rgba[rgba_start] != bgcolouroverdraw {
                 //println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
                 continue;
             }
             // draw pixel
             let tilerow = get_tile_row_data(mem, tiledata, s.tile as u32 as i32, ty % 8);
             let colour = get_tile_colour(tilerow, tx as u8, s.palette);
+            let pixel = apply_palette(colour, s.palette);
 
             // Is this pixel transparent?
-            if colour != 255 {
-                //println!("Drawn pixel {:X} {}", rgba_start, colour);
-                set_pixel(rgba, rgba_start, colour);
+            if colour != 0 {
+                //println!("Drawn pixel {:X} {}", rgba_start, pixel);
+                set_pixel(rgba, rgba_start, pixel);
             } else {
                 //println!("Skipped pixel {}", colour);
             }
@@ -285,7 +288,7 @@ fn sprite_in_row(line: i16, sy: i16, height: u8) -> bool {
 }
 
 fn sprite_on_disp(sx: i16) -> bool {
-    sx > -8 && sx <= (GB_HSIZE - 8) as i16
+    sx > -8 && sx <= GB_HSIZE as i16
 }
 
 fn get_tile_row_data(mem: &Memory, tiledata: u16, tilenum: i32, ty: u16) -> (u8, u8) {
@@ -307,9 +310,7 @@ fn get_tile_colour(tilerow: (u8, u8), tx: u8, palette: u8) -> u8 {
 
     let bit = 0b1 << (7 - tx);
 
-    let pixel = ((byte1 & bit) >> (7 - tx)) | (((byte2 & bit) >> (7 - tx)) << 1);
-
-    apply_palette(pixel, palette)
+    ((byte1 & bit) >> (7 - tx)) | (((byte2 & bit) >> (7 - tx)) << 1)
 }
 
 fn apply_palette(colour: u8, pal: u8) -> u8 {
