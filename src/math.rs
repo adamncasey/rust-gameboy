@@ -247,3 +247,9 @@ mod tests {
         assert_eq!(255, (0xFF as u8) as i16);
     }
 }
+
+pub fn complement_carry(cpu: &mut Cpu) {
+    let z: bool = cpu.z_flag();
+    
+    cpu.set_flags(z, false, false, cpu.c_flag() == 0);
+}

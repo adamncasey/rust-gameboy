@@ -195,7 +195,7 @@ fn draw_background(
             (tilenumtemp as u16) as i32
         };
 
-        // TODO SLOW draw all eight pixels at once.
+        // TODO draw all eight pixels at once.
         let tilerow = get_tile_row_data(mem, tiledata, tilenum, ty);
         let colour = get_tile_colour(tilerow, tx, bgp);
         let pixel = apply_palette(colour, bgp);
