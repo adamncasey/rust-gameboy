@@ -202,7 +202,7 @@ impl Cpu {
             }
             Cpu16Register::AF => {
                 self.a = high;
-                self.f = low;
+                self.f = low & 0xF0;
             }
         }
     }
