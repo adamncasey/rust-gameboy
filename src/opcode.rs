@@ -175,6 +175,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::A,
         },
+        0x3F => Instruction::CCF,
         0x40 => Instruction::LDR8 {
             src: CpuRegister::B,
             dst: CpuRegister::B,
@@ -391,7 +392,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             dst_addr: Cpu16Register::HL,
             src: CpuRegister::L,
         },
-        // 0x76 HALT
+        0x76 => Instruction::HALT,
         0x77 => Instruction::STA8 {
             dst_addr: Cpu16Register::HL,
             src: CpuRegister::A,

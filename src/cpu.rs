@@ -17,6 +17,7 @@ pub struct Cpu {
     interrupts: bool,
 
     jumped: bool,
+    halted: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -67,10 +68,15 @@ impl Cpu {
             l: 0x4D,
             interrupts: true, // TODO start value?
             jumped: false,
+            halted: false,
         }
     }
 
     pub fn cycle(&mut self, mem: &mut Memory, debug: bool) -> u8 {
+        if self.halted {
+            return 8;
+        }
+
         let instr = Instruction::read(&mem, self.pc);
 
         if debug {
@@ -96,6 +102,8 @@ impl Cpu {
     }
 
     pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
+        self.halted = false;
+
         if !self.interrupts {
             //println!("Interrupts disabled {:?}", active);
             return;
@@ -264,6 +272,11 @@ impl Cpu {
     pub fn disable_interrupts(&mut self) {
         self.interrupts = false;
         //println!("Interrupts disabled");
+    }
+
+    pub fn halt(&mut self) {
+        self.halted = true;
+        println!("HALT");
     }
 
     pub fn print_state(&self) -> String {

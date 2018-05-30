@@ -165,7 +165,7 @@ fn draw_background(
     rgba: &mut [u8],
 ) {
     let scy: u8 = mem.get(0xFF42);
-    let bgy = (line + scy) as u16;
+    let bgy = line as u16 + scy as u16;
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -187,7 +187,7 @@ fn draw_background(
 
         let tx: u8 = (bgx % 8) as u8;
 
-        let mut tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
+        let tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
 
         let tilenum: i32 = if !bgmap {
             (tilenumtemp as i8) as i32
@@ -195,7 +195,7 @@ fn draw_background(
             (tilenumtemp as u16) as i32
         };
 
-        // TODO SLOW draw all eight pixels at once.
+        // TODO draw all eight pixels at once.
         let tilerow = get_tile_row_data(mem, tiledata, tilenum, ty);
         let colour = get_tile_colour(tilerow, tx, bgp);
 
@@ -269,7 +269,7 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
         y: mem.get(addr) as u16 as i16 - 16,
         x: mem.get(addr + 1) as u16 as i16 - 8,
         tile: mem.get(addr + 2),
-        priority: options & 0b1000000 != 0,
+        priority: options & 0b1000000 == 0,
         yflip: options & 0b100000 != 0,
         xflip: options & 0b10000 != 0,
         palette: if options & 0b1000 != 0 {

@@ -231,3 +231,9 @@ pub fn rlc(cpu: &mut Cpu, reg: CpuRegister) {
 
     cpu.set(reg, res);
 }
+
+pub fn complement_carry(cpu: &mut Cpu) {
+    let z: bool = cpu.z_flag();
+    
+    cpu.set_flags(z, false, false, cpu.c_flag() == 0);
+}

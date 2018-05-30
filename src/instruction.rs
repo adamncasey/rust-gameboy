@@ -147,6 +147,7 @@ pub enum Instruction {
         reg: Cpu16Register,
     },
     CPL,
+    CCF,
     DI,
     EI,
     CMPR {
@@ -222,6 +223,7 @@ pub enum Instruction {
     RR {
         reg: CpuRegister,
     },
+    HALT,
 
     ILLEGAL,
 }
@@ -299,6 +301,7 @@ impl Instruction {
             Instruction::INC16 { .. } => 1,
             Instruction::DEC16 { .. } => 1,
             Instruction::CPL => 1,
+            Instruction::CCF => 1,
             Instruction::DI => 1,
             Instruction::EI => 1,
             Instruction::CMPR { .. } => 1,
@@ -331,6 +334,7 @@ impl Instruction {
             Instruction::RRC { .. } => 2,
             Instruction::RL { .. } => 2,
             Instruction::RR { .. } => 2,
+            Instruction::HALT => 1,
 
             Instruction::ILLEGAL => panic!("Illegal instruction"),
         }
@@ -644,6 +648,10 @@ impl Instruction {
                 math::complement(cpu);
                 cycles = 4;
             }
+            Instruction::CCF => {
+                math::complement_carry(cpu);
+                cycles = 4;
+            }
             Instruction::DI => {
                 cpu.disable_interrupts();
                 cycles = 4;
@@ -797,6 +805,10 @@ impl Instruction {
             }
             Instruction::RR { reg } => {
                 math::rr(cpu, reg);
+                cycles = 4;
+            }
+            Instruction::HALT => {
+                cpu.halt();
                 cycles = 4;
             }
         };
