@@ -121,14 +121,14 @@ impl Gpu {
 
     fn draw_line(line: u8, mem: &Memory, rgba: &mut [u8]) {
         let lcdc: u8 = mem.get(0xFF40);
-        let tiles = tiles_start((lcdc & TILEDATA_BIT) != 0);
+        let tiledataselect = (lcdc & TILEDATA_BIT) != 0;
+        let tiles = tiles_start(tiledataselect);
 
         let bg_win_colours: u8 = mem.get(0xFF47);
 
         if lcdc & BG_DISP_BIT != 0 {
-            let bgmap: bool = (lcdc & BG_TILEMAP_BIT) != 0;
-            let tilemap = select_tilemap(bgmap);
-            draw_background(line, mem, bg_win_colours, tiles, tilemap, bgmap, rgba);
+            let tilemap = select_tilemap((lcdc & BG_TILEMAP_BIT) != 0);
+            draw_background(line, mem, bg_win_colours, tiles, tiledataselect, tilemap, rgba);
         }
 
         if lcdc & WINDOW_DISP_BIT != 0 {
@@ -160,8 +160,8 @@ fn draw_background(
     mem: &Memory,
     bgp: u8,
     tiledata: u16,
+    tiledataselect: bool,
     tilemap: u16,
-    bgmap: bool,
     rgba: &mut [u8],
 ) {
     let scy: u8 = mem.get(0xFF42);
@@ -189,7 +189,7 @@ fn draw_background(
 
         let tilenumtemp: u8 = mem.get(tilemap + vtile * 32 + htile);
 
-        let tilenum: i32 = if !bgmap {
+        let tilenum: i32 = if !tiledataselect {
             (tilenumtemp as i8) as i32
         } else {
             (tilenumtemp as u16) as i32
@@ -197,7 +197,7 @@ fn draw_background(
 
         // TODO draw all eight pixels at once.
         let tilerow = get_tile_row_data(mem, tiledata, tilenum, ty);
-        let colour = get_tile_colour(tilerow, tx, bgp);
+        let colour = get_tile_colour(tilerow, tx);
         let pixel = apply_palette(colour, bgp);
 
         let rgba_start = ((line as usize) * GB_HSIZE + i as usize) * 4;
@@ -236,7 +236,7 @@ fn draw_sprites(line: u8, mem: &Memory, sprite_height: u8, tiledata: u16, bgp: u
             }
             // draw pixel
             let tilerow = get_tile_row_data(mem, tiledata, s.tile as u32 as i32, ty % 8);
-            let colour = get_tile_colour(tilerow, tx as u8, s.palette);
+            let colour = get_tile_colour(tilerow, tx as u8);
             let pixel = apply_palette(colour, s.palette);
 
             // Is this pixel transparent?
@@ -305,7 +305,7 @@ fn get_tile_row_data(mem: &Memory, tiledata: u16, tilenum: i32, ty: u16) -> (u8,
 }
 
 // returns 2 bit colour
-fn get_tile_colour(tilerow: (u8, u8), tx: u8, palette: u8) -> u8 {
+fn get_tile_colour(tilerow: (u8, u8), tx: u8) -> u8 {
     let (byte1, byte2) = tilerow;
 
     let bit = 0b1 << (7 - tx);
