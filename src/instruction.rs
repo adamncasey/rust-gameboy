@@ -31,6 +31,13 @@ pub enum Instruction {
     LDAA {
         addr: u16,
     },
+    LDHLI {
+        offset: i8
+    },
+    LDSPA {
+        addr: u16
+    },
+    LDSPHL,
     JP {
         addr: u16,
     },
@@ -271,6 +278,9 @@ impl Instruction {
             Instruction::LDD { .. } => 1,
             Instruction::LDI { .. } => 1,
             Instruction::LDAA { .. } => 3,
+            Instruction::LDHLI { .. } => 2,
+            Instruction::LDSPA { .. } => 3,
+            Instruction::LDSPHL => 1,
             Instruction::JP { .. } => 3,
             Instruction::JPNZ { .. } => 3,
             Instruction::JPZ { .. } => 3,
@@ -420,6 +430,21 @@ impl Instruction {
             Instruction::LDAA { addr } => {
                 cpu.set(CpuRegister::A, mem.get(addr));
                 cycles = 16;
+            }
+            Instruction::LDHLI { offset } => {
+                let addr = cpu.get16(Cpu16Register::SP) as i32 + (offset as i32);
+                cpu.set16(Cpu16Register::HL, addr as u16);
+                cycles = 12;
+                // TODO set H/C flags. Z + N = false.
+            }
+            Instruction::LDSPA { addr } => {
+                cpu.set16(Cpu16Register::SP, mem.get16(addr));
+                cycles = 20;
+            }
+            Instruction::LDSPHL => {
+                let val: u16 = cpu.get16(Cpu16Register::HL);
+                cpu.set16(Cpu16Register::SP, val);
+                cycles = 8;
             }
             Instruction::JP { addr } => {
                 cpu.jump(addr);

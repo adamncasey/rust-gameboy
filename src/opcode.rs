@@ -28,6 +28,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             reg: CpuRegister::B,
         },
         0x07 => Instruction::RLCA,
+        0x08 => Instruction::LDSPA {
+            addr: mem.get16(argstart)
+        },
         0x09 => Instruction::ADD16 {
             src: Cpu16Register::BC,
         },
@@ -708,6 +711,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         0xEE => Instruction::XORI {
             val: mem.get(argstart),
         },
+        0xEF => Instruction::RST { addr: 0x0028 },
         0xF0 => Instruction::LDHA {
             addr: mem.get(argstart),
         },
@@ -724,6 +728,8 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
         },
         0xF7 => Instruction::RST { addr: 0x0030 },
+        0xF8 => Instruction::LDHLI { offset: mem.get(argstart) as i8 },
+        0xF9 => Instruction::LDSPHL,
         0xFA => Instruction::LDAA {
             addr: mem.get16(argstart),
         },
