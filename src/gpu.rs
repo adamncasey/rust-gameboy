@@ -255,8 +255,8 @@ struct Sprite {
     x: i16,
     tile: u8,
     priority: bool,
-    yflip: bool,
-    xflip: bool,
+    _yflip: bool,
+    _xflip: bool,
     palette: u8,
 }
 
@@ -273,8 +273,8 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
         x: mem.get(addr + 1) as u16 as i16 - 8,
         tile: mem.get(addr + 2),
         priority: options & 0b1000000 == 0,
-        yflip: options & 0b100000 != 0,
-        xflip: options & 0b10000 != 0,
+        _yflip: options & 0b100000 != 0,
+        _xflip: options & 0b10000 != 0,
         palette: if options & 0b1000 != 0 {
             palettes.1
         } else {

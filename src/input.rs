@@ -13,78 +13,68 @@ pub enum Button {
 }
 
 pub struct Input {
-    col1: u8,
-    col2: u8,
-    active_col1: bool,
-    has_interrupt: bool,
+    buttons: u8,
+    joypad: u8,
+    high4: u8
 }
 
 impl Input {
     pub fn new() -> Input {
         Input {
-            col1: 0b11101111,
-            col2: 0b11011111,
-            active_col1: true,
-            has_interrupt: false,
+            buttons: 0,
+            joypad: 0,
+            high4: 0xF0
         }
     }
 
     pub fn set_input(&mut self, key: Button, key_down: bool) {
-        let func = if key_down { math::reset } else { math::set };
-
-        let mut col1_change = false;
+        let func = if key_down { math::set } else { math::reset };
 
         match key {
             Button::A => {
-                self.col2 = func(self.col2, 0);
+                self.buttons = func(self.buttons, 0);
             }
             Button::B => {
-                self.col2 = func(self.col2, 1);
+                self.buttons = func(self.buttons, 1);
             }
             Button::Select => {
-                self.col2 = func(self.col2, 2);
+                self.buttons = func(self.buttons, 2);
             }
             Button::Start => {
-                self.col2 = func(self.col2, 3);
+                self.buttons = func(self.buttons, 3);
             }
             Button::Right => {
-                self.col1 = func(self.col1, 0);
-                col1_change = true;
+                self.joypad = func(self.joypad, 0);
             }
             Button::Left => {
-                self.col1 = func(self.col1, 1);
-                col1_change = true;
+                self.joypad = func(self.joypad, 1);
             }
             Button::Up => {
-                self.col1 = func(self.col1, 2);
-                col1_change = true;
+                self.joypad = func(self.joypad, 2);
             }
             Button::Down => {
-                self.col1 = func(self.col1, 3);
-                col1_change = true;
+                self.joypad = func(self.joypad, 3);
             }
         }
-
-        self.has_interrupt |= self.active_col1 == col1_change;
     }
 
     pub fn fetch_interrupt(&mut self) -> bool {
-        let res = self.has_interrupt;
-        self.has_interrupt = false;
-
-        res
+        false
     }
 
-    pub fn update(&mut self, mem: &mut Memory) {
-        self.active_col1 = (mem.get(0xFF00) & 0x10) == 0;
+    pub fn value(&self) -> u8 {
+        let mut result = self.high4;
+        if (self.high4 & 0x10) != 0 {
+            result |= !self.buttons;
+        }
+        else if (self.high4 & 0x20) != 0 {
+            result |= !self.joypad;
+        }
 
-        mem.set(
-            0xFF00,
-            0xC0 | if self.active_col1 {
-                self.col1
-            } else {
-                self.col2
-            },
-        );
+        result
+    }
+
+    pub fn update(&mut self, val: u8) {
+        self.high4 = val & 0xF0;
     }
 }

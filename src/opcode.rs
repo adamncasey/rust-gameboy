@@ -701,7 +701,6 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
         },
         0xE9 => Instruction::JPA,
-        0xEF => Instruction::RST { addr: 0x0028 },
         0xEA => Instruction::STAA {
             addr: mem.get16(argstart),
         },

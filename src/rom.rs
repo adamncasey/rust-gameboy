@@ -28,11 +28,11 @@ impl Rom {
 
         // Copy out game_title
         let bytes = &rom.rom_contents[ROM_TITLE_START..ROM_TITLE_END];
-        rom.game_title = String::from(match(str::from_utf8(bytes)) {
+        rom.game_title = String::from(match str::from_utf8(bytes) {
             Result::Ok(val) => val,
-            Result::Err(err) => {
+            Result::Err(_) => {
                 println!("Error loading rom title {:?}", bytes);
-                "Default title"
+                "Empty title"
             }
         });
 

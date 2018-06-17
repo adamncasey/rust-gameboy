@@ -1,3 +1,5 @@
+use input::Input;
+
 pub struct Memory {
     cartridge: Vec<u8>,
     vram: Vec<u8>,
@@ -7,7 +9,11 @@ pub struct Memory {
     io: Vec<u8>,
     highram: Vec<u8>,
 
+    // All unused memory is forwarded to the same byte
+    // TODO reads shouldn't be affected by writes
     unused: u8,
+    // Input is always interfaced via the MMU
+    input: Input,
 }
 
 const VRAM_SIZE: usize = 8 * 1024;
@@ -30,6 +36,7 @@ impl Memory {
             highram: vec![0; HIGHRAM_SIZE],
 
             unused: 0,
+            input: Input::new(),
         };
 
         mem.set(0xFF40, 0x91);
@@ -38,7 +45,10 @@ impl Memory {
     }
 
     pub fn get(&self, addr: u16) -> u8 {
-        *self.mmu(addr)
+        match addr {
+            0xFF00 => self.input.value(),
+            _ => *self.mmu(addr)
+        }
     }
 
     pub fn set(&mut self, addr: u16, val: u8) {
@@ -97,7 +107,7 @@ impl Memory {
         // TODO Handle input register
         match addr {
             0xFF00 => {
-
+                self.input.update(val);
             }
             0xFF46 => {
                 // OAM Write
@@ -112,5 +122,23 @@ impl Memory {
             }
             _ => ()
         }
+    }
+
+    pub fn input(&mut self) -> &mut Input {
+        &mut self.input
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_loop() {
+        let mut i = 0;
+        for _ in 0..160 {
+            i += 1;
+        }
+        assert_eq!(160, i);
     }
 }
