@@ -74,7 +74,7 @@ impl Memory {
 
     fn mmu_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
-            0x0000...0x7FFF => &mut self.cartridge[addr as usize],
+            0x0000...0x7FFF => &mut self.unused,
             0x8000...0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
             0xA000...0xBFFF => &mut self.eram[(addr - 0xA000) as usize],
             0xC000...0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
