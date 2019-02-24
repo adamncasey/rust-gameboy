@@ -1,7 +1,7 @@
-use cpu::{Cpu, Cpu16Register, CpuRegister};
-use memory::Memory;
-use math;
-use opcode::{read_extended_opcode, read_opcode};
+use crate::cpu::{Cpu, Cpu16Register, CpuRegister};
+use crate::memory::Memory;
+use crate::math;
+use crate::opcode::{read_extended_opcode, read_opcode};
 
 #[derive(Debug)]
 pub enum Instruction {

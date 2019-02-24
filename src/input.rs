@@ -1,5 +1,4 @@
-use memory::Memory;
-use math;
+use crate::math;
 
 pub enum Button {
     A,

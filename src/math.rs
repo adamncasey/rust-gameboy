@@ -1,4 +1,4 @@
-use cpu::{Cpu, Cpu16Register, CpuRegister};
+use crate::cpu::{Cpu, Cpu16Register, CpuRegister};
 
 pub fn subtract(cpu: &mut Cpu, val: u8) {
     let lhs: u8 = cpu.get(CpuRegister::A);

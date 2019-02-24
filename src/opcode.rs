@@ -1,6 +1,6 @@
-use cpu::*;
-use instruction::Instruction;
-use memory::Memory;
+use crate::cpu::*;
+use crate::instruction::Instruction;
+use crate::memory::Memory;
 
 
 pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {

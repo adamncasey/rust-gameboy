@@ -1,8 +1,8 @@
-use rom::Rom;
-use cpu::{Cpu, CpuInterrupt};
-use gpu::{Gpu, GpuInterrupt};
-use input::Input;
-use memory::Memory;
+use crate::rom::Rom;
+use crate::cpu::{Cpu, CpuInterrupt};
+use crate::gpu::{Gpu, GpuInterrupt};
+use crate::input::Input;
+use crate::memory::Memory;
 
 pub struct GameBoy {
     title: String,

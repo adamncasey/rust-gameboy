@@ -1,4 +1,4 @@
-use memory::Memory;
+use crate::memory::Memory;
 
 pub const GB_HSIZE: usize = 160;
 pub const GB_VSIZE: usize = 144;
@@ -143,15 +143,6 @@ impl Gpu {
         else {
             //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
         }
-    }
-
-    pub fn print_state(&self) {
-        println!(
-            "mode {:?} elapsed {} line {}",
-            self.mode,
-            self.mode_elapsed,
-            self.line
-        );
     }
 }
 

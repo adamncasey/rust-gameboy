@@ -1,4 +1,4 @@
-use input::Input;
+use crate::input::Input;
 
 pub struct Memory {
     cartridge: Vec<u8>,
@@ -126,19 +126,5 @@ impl Memory {
 
     pub fn input(&mut self) -> &mut Input {
         &mut self.input
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_loop() {
-        let mut i = 0;
-        for _ in 0..160 {
-            i += 1;
-        }
-        assert_eq!(160, i);
     }
 }

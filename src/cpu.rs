@@ -1,5 +1,5 @@
-use memory::Memory;
-use instruction::Instruction;
+use crate::memory::Memory;
+use crate::instruction::Instruction;
 
 pub struct Cpu {
     pub pc: u16,
