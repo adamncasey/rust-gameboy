@@ -1,24 +1,24 @@
-mod rom;
-mod memory;
 mod cpu;
+mod gameboy;
+mod gpu;
+mod input;
 mod instruction;
 mod math;
-mod gpu;
+mod memory;
 mod opcode;
-mod gameboy;
-mod input;
+mod rom;
 
-use gpu::{GB_HSIZE, GB_VSIZE};
 use gameboy::GameBoy;
+use gpu::{GB_HSIZE, GB_VSIZE};
 use input::Button;
 
 extern crate sfml;
 use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture, Transformable};
+use sfml::system::Vector2f;
 use sfml::window::{Event, Key, Style};
-use sfml::system::{Vector2f};
 
 extern crate clap;
-use clap::{Arg, App};
+use clap::{App, Arg};
 
 fn main() {
     let matches = App::new("gb-rust")
@@ -40,7 +40,7 @@ fn main() {
     println!("Loaded rom: {:?}", gb.title());
 
     let mut window = RenderWindow::new(
-        (GB_HSIZE as u32 *3, GB_VSIZE as u32 *3),
+        (GB_HSIZE as u32 * 3, GB_VSIZE as u32 * 3),
         "gb-rust",
         Style::CLOSE,
         &Default::default(),
@@ -92,7 +92,7 @@ fn main() {
                     Key::Left => gb.input().set_input(Button::Left, false),
                     Key::Right => gb.input().set_input(Button::Right, false),
                     _ => (),
-                }
+                },
                 _ => {}
             }
         }

@@ -22,7 +22,7 @@ pub fn add(cpu: &mut Cpu, val: u8) {
     cpu.set(CpuRegister::A, result);
 
     let z = result == 0;
-    let h = ((lhs&0xf).wrapping_add(val&0xf) & 0x10) != 0;
+    let h = ((lhs & 0xf).wrapping_add(val & 0xf) & 0x10) != 0;
     let c = result <= lhs && (val != 0);
 
     cpu.set_flags(z, true, h, c);
@@ -36,7 +36,7 @@ pub fn add16(cpu: &mut Cpu, reg: Cpu16Register, val: u16) {
     cpu.set16(reg, result);
 
     let z = cpu.z_flag();
-    let h = ((lhs&0xf00).wrapping_add(val&0xf00) & 0x10) != 0;
+    let h = ((lhs & 0xf00).wrapping_add(val & 0xf00) & 0x10) != 0;
     let c = result <= lhs && (val != 0);
     cpu.set_flags(z, false, h, c);
 }
@@ -50,7 +50,7 @@ pub fn increment(cpu: &mut Cpu, val: u8) -> u8 {
 
     cpu.set_flags(z, false, h, c);
 
-    return newval;
+    newval
 }
 
 pub fn increment16(cpu: &mut Cpu, reg: Cpu16Register) {
@@ -74,7 +74,7 @@ pub fn decrement(cpu: &mut Cpu, val: u8) -> u8 {
 
     cpu.set_flags(z, true, h, c);
 
-    return newval;
+    newval
 }
 
 pub fn decrement16(cpu: &mut Cpu, reg: Cpu16Register) {
@@ -137,7 +137,7 @@ pub fn swap_nibble(cpu: &mut Cpu, val: u8) -> u8 {
 
     cpu.set_flags(val == 0, false, false, false);
 
-    return res;
+    res
 }
 
 pub fn bit(cpu: &mut Cpu, val: u8, n: u8) {
@@ -150,18 +150,18 @@ pub fn bit(cpu: &mut Cpu, val: u8, n: u8) {
 pub fn set(val: u8, n: u8) -> u8 {
     let mask = 0b1 << n;
 
-    return val | mask;
+    val | mask
 }
 
 pub fn reset(val: u8, n: u8) -> u8 {
     let mask = 0b1 << n;
 
-    return !((!val) | mask);
+    !((!val) | mask)
 }
 
 pub fn sla(cpu: &mut Cpu, val: u8) -> u8 {
     let res = val << 1;
-    let msb = (val & 0b10000000) != 0;
+    let msb = (val & 0b1000_0000) != 0;
 
     cpu.set_flags(res == 0, false, false, msb);
 
@@ -178,7 +178,7 @@ pub fn srl(cpu: &mut Cpu, val: u8) -> u8 {
 }
 
 pub fn sra(cpu: &mut Cpu, val: u8) -> u8 {
-    let msb = val & 0b10000000;
+    let msb = val & 0b1000_0000;
     let res = (val >> 1) | msb;
     let lsb = (val & 0b1) != 0;
 
@@ -187,7 +187,7 @@ pub fn sra(cpu: &mut Cpu, val: u8) -> u8 {
     res
 }
 
-pub fn rr(cpu: &mut Cpu, val: u8) -> u8{
+pub fn rr(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = cpu.c_flag() << 7;
     let c: bool = (val & 0b1) != 0;
 
@@ -200,7 +200,7 @@ pub fn rr(cpu: &mut Cpu, val: u8) -> u8{
 }
 pub fn rl(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = cpu.c_flag();
-    let c: bool = (val & 0b10000000) != 0;
+    let c: bool = (val & 0b1000_0000) != 0;
 
     let rotated = val.rotate_left(1);
     let res = rotated | old_c;
@@ -217,7 +217,7 @@ pub fn rrc(cpu: &mut Cpu, val: u8) -> u8 {
     res
 }
 pub fn rlc(cpu: &mut Cpu, val: u8) -> u8 {
-    let c: bool = (val & 0b10000000) != 0;
+    let c: bool = (val & 0b1000_0000) != 0;
     let res = val.rotate_left(1);
     cpu.set_flags(res == 0, false, false, c);
 
@@ -238,18 +238,18 @@ mod tests {
         assert_eq!(0x20, set(0, 5));
         assert_eq!(0x40, set(0, 6));
         assert_eq!(0x80, set(0, 7));
-        
+
         assert_eq!(0x01, set(1, 0));
     }
 
     #[test]
     fn test_cast() {
-        assert_eq!(255, (0xFF as u8) as i16);
+        assert_eq!(255, i16::from(0xFF as u8));
     }
 }
 
 pub fn complement_carry(cpu: &mut Cpu) {
     let z: bool = cpu.z_flag();
-    
+
     cpu.set_flags(z, false, false, cpu.c_flag() == 0);
 }

@@ -2,7 +2,6 @@ use crate::cpu::*;
 use crate::instruction::Instruction;
 use crate::memory::Memory;
 
-
 pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
     match opcode {
         0x00 => Instruction::Noop,
@@ -29,7 +28,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         },
         0x07 => Instruction::RLCA,
         0x08 => Instruction::LDSPA {
-            addr: mem.get16(argstart)
+            addr: mem.get16(argstart),
         },
         0x09 => Instruction::ADD16 {
             src: Cpu16Register::BC,
@@ -727,7 +726,9 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
         },
         0xF7 => Instruction::RST { addr: 0x0030 },
-        0xF8 => Instruction::LDHLI { offset: mem.get(argstart) as i8 },
+        0xF8 => Instruction::LDHLI {
+            offset: mem.get(argstart) as i8,
+        },
         0xF9 => Instruction::LDSPHL,
         0xFA => Instruction::LDAA {
             addr: mem.get16(argstart),
@@ -855,14 +856,28 @@ pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instru
         0x27 => Instruction::SLA {
             reg: CpuRegister::A,
         },
-        0x28 => Instruction::SRA { reg: CpuRegister::B },
-        0x29 => Instruction::SRA { reg: CpuRegister::C },
-        0x2A => Instruction::SRA { reg: CpuRegister::D },
-        0x2B => Instruction::SRA { reg: CpuRegister::E },
-        0x2C => Instruction::SRA { reg: CpuRegister::L },
-        0x2D => Instruction::SRA { reg: CpuRegister::H },
+        0x28 => Instruction::SRA {
+            reg: CpuRegister::B,
+        },
+        0x29 => Instruction::SRA {
+            reg: CpuRegister::C,
+        },
+        0x2A => Instruction::SRA {
+            reg: CpuRegister::D,
+        },
+        0x2B => Instruction::SRA {
+            reg: CpuRegister::E,
+        },
+        0x2C => Instruction::SRA {
+            reg: CpuRegister::L,
+        },
+        0x2D => Instruction::SRA {
+            reg: CpuRegister::H,
+        },
         0x2E => Instruction::SRAA,
-        0x2F => Instruction::SRA { reg: CpuRegister::A },
+        0x2F => Instruction::SRA {
+            reg: CpuRegister::A,
+        },
         0x30 => Instruction::SWAP {
             reg: CpuRegister::B,
         },
@@ -885,14 +900,28 @@ pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instru
         0x37 => Instruction::SWAP {
             reg: CpuRegister::A,
         },
-        0x38 => Instruction::SRL { reg: CpuRegister::B },
-        0x39 => Instruction::SRL { reg: CpuRegister::C },
-        0x3A => Instruction::SRL { reg: CpuRegister::D },
-        0x3B => Instruction::SRL { reg: CpuRegister::E },
-        0x3C => Instruction::SRL { reg: CpuRegister::L },
-        0x3D => Instruction::SRL { reg: CpuRegister::H },
+        0x38 => Instruction::SRL {
+            reg: CpuRegister::B,
+        },
+        0x39 => Instruction::SRL {
+            reg: CpuRegister::C,
+        },
+        0x3A => Instruction::SRL {
+            reg: CpuRegister::D,
+        },
+        0x3B => Instruction::SRL {
+            reg: CpuRegister::E,
+        },
+        0x3C => Instruction::SRL {
+            reg: CpuRegister::L,
+        },
+        0x3D => Instruction::SRL {
+            reg: CpuRegister::H,
+        },
         0x3E => Instruction::SRLA,
-        0x3F => Instruction::SRL { reg: CpuRegister::A },
+        0x3F => Instruction::SRL {
+            reg: CpuRegister::A,
+        },
         0x40 => Instruction::BIT {
             n: 0,
             reg: CpuRegister::B,

@@ -1,6 +1,6 @@
 use crate::cpu::{Cpu, Cpu16Register, CpuRegister};
-use crate::memory::Memory;
 use crate::math;
+use crate::memory::Memory;
 use crate::opcode::{read_extended_opcode, read_opcode};
 
 #[derive(Debug)]
@@ -32,10 +32,10 @@ pub enum Instruction {
         addr: u16,
     },
     LDHLI {
-        offset: i8
+        offset: i8,
     },
     LDSPA {
-        addr: u16
+        addr: u16,
     },
     LDSPHL,
     JP {
@@ -76,13 +76,13 @@ pub enum Instruction {
         addr: u16,
     },
     CALLNC {
-        addr: u16
+        addr: u16,
     },
     CALLZ {
-        addr: u16
+        addr: u16,
     },
     CALLC {
-        addr: u16
+        addr: u16,
     },
     RET,
     RETNZ,
@@ -125,7 +125,9 @@ pub enum Instruction {
     SBCA {
         reg_addr: Cpu16Register,
     },
-    SBCI { val: u8 },
+    SBCI {
+        val: u8,
+    },
     ADDR {
         reg: CpuRegister,
     },
@@ -143,7 +145,9 @@ pub enum Instruction {
         reg: CpuRegister,
     },
     ADCA,
-    ADCI { val: u8 },
+    ADCI {
+        val: u8,
+    },
     XORR {
         reg: CpuRegister,
     },
@@ -225,9 +229,13 @@ pub enum Instruction {
         reg: CpuRegister,
     },
     SLAA,
-    SRL { reg: CpuRegister },
+    SRL {
+        reg: CpuRegister,
+    },
     SRLA,
-    SRA { reg: CpuRegister },
+    SRA {
+        reg: CpuRegister,
+    },
     SRAA,
     RLCA,
     RLA,
@@ -263,7 +271,7 @@ impl Instruction {
             return read_extended_opcode(mem.get(addr + 1), addr + 2, mem);
         }
 
-        return read_opcode(opcode, addr + 1, mem);
+        read_opcode(opcode, addr + 1, mem)
     }
 
     pub fn mem_size(inst: &Instruction) -> u16 {
@@ -407,11 +415,11 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::LDHA { addr } => {
-                cpu.set(CpuRegister::A, mem.get(0xFF00 + (addr as u16)));
+                cpu.set(CpuRegister::A, mem.get(0xFF00 + u16::from(addr)));
                 cycles = 12;
             }
             Instruction::LDHCA => {
-                let addr: u16 = cpu.get(CpuRegister::C) as u16;
+                let addr: u16 = u16::from(cpu.get(CpuRegister::C));
                 cpu.set(CpuRegister::A, mem.get(0xFF00 + addr));
                 cycles = 8;
             }
@@ -432,7 +440,7 @@ impl Instruction {
                 cycles = 16;
             }
             Instruction::LDHLI { offset } => {
-                let addr = cpu.get16(Cpu16Register::SP) as i32 + (offset as i32);
+                let addr = i32::from(cpu.get16(Cpu16Register::SP)) + i32::from(offset);
                 cpu.set16(Cpu16Register::HL, addr as u16);
                 cycles = 12;
                 // TODO set H/C flags. Z + N = false.
@@ -450,30 +458,38 @@ impl Instruction {
                 cpu.jump(addr);
                 cycles = 16;
             }
-            Instruction::JPNZ { addr } => if !cpu.z_flag() {
-                cpu.jump(addr);
-                cycles = 16;
-            } else {
-                cycles = 12;
-            },
-            Instruction::JPZ { addr } => if cpu.z_flag() {
-                cpu.jump(addr);
-                cycles = 16;
-            } else {
-                cycles = 12;
-            },
-            Instruction::JPNC { addr } => if cpu.c_flag() == 0 {
-                cpu.jump(addr);
-                cycles = 16;
-            } else {
-                cycles = 12;
-            },
-            Instruction::JPC { addr } => if cpu.c_flag() == 1 {
-                cpu.jump(addr);
-                cycles = 16;
-            } else {
-                cycles = 12;
-            },
+            Instruction::JPNZ { addr } => {
+                if !cpu.z_flag() {
+                    cpu.jump(addr);
+                    cycles = 16;
+                } else {
+                    cycles = 12;
+                }
+            }
+            Instruction::JPZ { addr } => {
+                if cpu.z_flag() {
+                    cpu.jump(addr);
+                    cycles = 16;
+                } else {
+                    cycles = 12;
+                }
+            }
+            Instruction::JPNC { addr } => {
+                if cpu.c_flag() == 0 {
+                    cpu.jump(addr);
+                    cycles = 16;
+                } else {
+                    cycles = 12;
+                }
+            }
+            Instruction::JPC { addr } => {
+                if cpu.c_flag() == 1 {
+                    cpu.jump(addr);
+                    cycles = 16;
+                } else {
+                    cycles = 12;
+                }
+            }
             Instruction::JPA => {
                 let addr = cpu.get16(Cpu16Register::HL);
                 cpu.jump(addr);
@@ -483,96 +499,120 @@ impl Instruction {
                 cpu.rjump(offset + 2);
                 cycles = 12;
             }
-            Instruction::JRNZ { offset } => if !cpu.z_flag() {
-                cpu.rjump(offset + 2);
-                cycles = 12;
-            } else {
-                cycles = 8;
-            },
-            Instruction::JRZ { offset } => if cpu.z_flag() {
-                cpu.rjump(offset + 2);
-                cycles = 12;
-            } else {
-                cycles = 8;
-            },
-            Instruction::JRNC { offset } => if cpu.c_flag() == 0 {
-                cpu.rjump(offset + 2);
-                cycles = 12;
-            } else {
-                cycles = 8;
-            },
-            Instruction::JRC { offset } => if cpu.c_flag() == 1 {
-                cpu.rjump(offset + 2);
-                cycles = 12;
-            } else {
-                cycles = 8;
-            },
+            Instruction::JRNZ { offset } => {
+                if !cpu.z_flag() {
+                    cpu.rjump(offset + 2);
+                    cycles = 12;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::JRZ { offset } => {
+                if cpu.z_flag() {
+                    cpu.rjump(offset + 2);
+                    cycles = 12;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::JRNC { offset } => {
+                if cpu.c_flag() == 0 {
+                    cpu.rjump(offset + 2);
+                    cycles = 12;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::JRC { offset } => {
+                if cpu.c_flag() == 1 {
+                    cpu.rjump(offset + 2);
+                    cycles = 12;
+                } else {
+                    cycles = 8;
+                }
+            }
             Instruction::CALL { addr } => {
                 cpu.sp -= 2;
                 mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.jump(addr);
                 cycles = 24;
             }
-            Instruction::CALLNZ { addr } => if !cpu.z_flag() {
-                cpu.sp -= 2;
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
-                cpu.jump(addr);
-                cycles = 24;
-            } else {
-                cycles = 12;
+            Instruction::CALLNZ { addr } => {
+                if !cpu.z_flag() {
+                    cpu.sp -= 2;
+                    mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                    cpu.jump(addr);
+                    cycles = 24;
+                } else {
+                    cycles = 12;
+                }
             }
-            Instruction::CALLNC { addr } => if cpu.c_flag() == 0 {
-                cpu.sp -= 2;
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
-                cpu.jump(addr);
-                cycles = 24;
-            } else {
-                cycles = 12;
+            Instruction::CALLNC { addr } => {
+                if cpu.c_flag() == 0 {
+                    cpu.sp -= 2;
+                    mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                    cpu.jump(addr);
+                    cycles = 24;
+                } else {
+                    cycles = 12;
+                }
             }
-            Instruction::CALLZ { addr } => if cpu.z_flag() {
-                cpu.sp -= 2;
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
-                cpu.jump(addr);
-                cycles = 24;
-            } else {
-                cycles = 12;
+            Instruction::CALLZ { addr } => {
+                if cpu.z_flag() {
+                    cpu.sp -= 2;
+                    mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                    cpu.jump(addr);
+                    cycles = 24;
+                } else {
+                    cycles = 12;
+                }
             }
-            Instruction::CALLC { addr } => if cpu.c_flag() == 1 {
-                cpu.sp -= 2;
-                mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
-                cpu.jump(addr);
-                cycles = 24;
-            } else {
-                cycles = 12;
+            Instruction::CALLC { addr } => {
+                if cpu.c_flag() == 1 {
+                    cpu.sp -= 2;
+                    mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
+                    cpu.jump(addr);
+                    cycles = 24;
+                } else {
+                    cycles = 12;
+                }
             }
             Instruction::RET => {
                 cpu.ret(mem);
                 cycles = 16;
             }
-            Instruction::RETNZ => if !cpu.z_flag() {
-                cpu.ret(mem);
-                cycles = 20;
-            } else {
-                cycles = 8;
-            },
-            Instruction::RETZ => if cpu.z_flag() {
-                cpu.ret(mem);
-                cycles = 20;
-            } else {
-                cycles = 8;
-            },
-            Instruction::RETNC => if cpu.c_flag() == 0 {
-                cpu.ret(mem);
-                cycles = 20;
-            } else {
-                cycles = 8;
-            },
-            Instruction::RETC => if cpu.c_flag() == 1 {
-                cpu.ret(mem);
-                cycles = 20;
-            } else {
-                cycles = 8;
-            },
+            Instruction::RETNZ => {
+                if !cpu.z_flag() {
+                    cpu.ret(mem);
+                    cycles = 20;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::RETZ => {
+                if cpu.z_flag() {
+                    cpu.ret(mem);
+                    cycles = 20;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::RETNC => {
+                if cpu.c_flag() == 0 {
+                    cpu.ret(mem);
+                    cycles = 20;
+                } else {
+                    cycles = 8;
+                }
+            }
+            Instruction::RETC => {
+                if cpu.c_flag() == 1 {
+                    cpu.ret(mem);
+                    cycles = 20;
+                } else {
+                    cycles = 8;
+                }
+            }
             Instruction::RETI => {
                 cpu.ret(mem);
                 cpu.enable_interrupts();
@@ -591,11 +631,11 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::STHA { addr } => {
-                mem.set((0xFF00 + addr as u16) as u16, cpu.get(CpuRegister::A));
+                mem.set((0xFF00 + u16::from(addr)) as u16, cpu.get(CpuRegister::A));
                 cycles = 12;
             }
             Instruction::STHCA => {
-                let addr: u16 = cpu.get(CpuRegister::C) as u16;
+                let addr: u16 = u16::from(cpu.get(CpuRegister::C));
                 mem.set(0xFF00 + addr, cpu.get(CpuRegister::A));
                 cycles = 8;
             }
@@ -668,7 +708,7 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::ADDSP { val } => {
-                math::add16(cpu, Cpu16Register::SP, val as u16);
+                math::add16(cpu, Cpu16Register::SP, u16::from(val));
                 cycles = 16;
             }
             Instruction::ADC { reg } => {
@@ -956,6 +996,6 @@ impl Instruction {
             }
         };
 
-        return cycles;
+        cycles
     }
 }

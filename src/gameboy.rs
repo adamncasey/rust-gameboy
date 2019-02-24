@@ -1,8 +1,8 @@
-use crate::rom::Rom;
 use crate::cpu::{Cpu, CpuInterrupt};
 use crate::gpu::{Gpu, GpuInterrupt};
 use crate::input::Input;
 use crate::memory::Memory;
+use crate::rom::Rom;
 
 pub struct GameBoy {
     title: String,
@@ -31,7 +31,7 @@ impl GameBoy {
     }
 
     pub fn title(&self) -> &str {
-        return &self.title;
+        &self.title
     }
 
     pub fn cycle(&mut self, screen_rgba: &mut Vec<u8>, debug: bool) -> bool {
@@ -48,8 +48,6 @@ impl GameBoy {
             self.cpu.interrupt(&mut self.mem, int);
         }
 
-//        self.mem.input().update(&mut self.mem);
-
         self.steps += 1;
         if debug {
             println!(
@@ -62,10 +60,10 @@ impl GameBoy {
 
         if let CpuInterrupt::VBlank = int {
             screen_rgba.copy_from_slice(&self.gpu.screen_rgba);
-            return true;
+            true
+        } else {
+            false
         }
-
-        return false;
     }
 
     pub fn input(&mut self) -> &mut Input {
@@ -76,13 +74,15 @@ impl GameBoy {
         match igpu {
             GpuInterrupt::VBlank => CpuInterrupt::VBlank,
             GpuInterrupt::LCDStatus => CpuInterrupt::LCDStatus,
-            _ => if itimer {
-                CpuInterrupt::Timer
-            } else if ijoypad {
-                CpuInterrupt::Joypad
-            } else {
-                CpuInterrupt::None
-            },
+            _ => {
+                if itimer {
+                    CpuInterrupt::Timer
+                } else if ijoypad {
+                    CpuInterrupt::Joypad
+                } else {
+                    CpuInterrupt::None
+                }
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
-use std::io;
-use std::str;
 use std::fs::File;
+use std::io;
 use std::io::prelude::*;
+use std::str;
 
 #[derive(Debug)]
 pub struct Rom {

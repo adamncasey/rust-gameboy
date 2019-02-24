@@ -41,13 +41,13 @@ impl Memory {
 
         mem.set(0xFF40, 0x91);
 
-        return mem;
+        mem
     }
 
     pub fn get(&self, addr: u16) -> u8 {
         match addr {
             0xFF00 => self.input.value(),
-            _ => *self.mmu(addr)
+            _ => *self.mmu(addr),
         }
     }
 
@@ -59,9 +59,9 @@ impl Memory {
 
     pub fn get16(&self, addr: u16) -> u16 {
         let low: u8 = self.get(addr);
-        let high: u16 = self.get(addr + 1) as u16;
+        let high: u16 = u16::from(self.get(addr + 1));
 
-        return (high << 8) + (low as u16);
+        (high << 8) + u16::from(low)
     }
 
     pub fn set16(&mut self, addr: u16, val: u16) {
@@ -103,7 +103,7 @@ impl Memory {
             _ => panic!("Unknown memory region 0x{:X}", addr),
         }
     }
-    fn special(&mut self, addr: u16, val: u8) {       
+    fn special(&mut self, addr: u16, val: u8) {
         // TODO Handle input register
         match addr {
             0xFF00 => {
@@ -113,14 +113,14 @@ impl Memory {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
                 //println!("DMA from {:x}", source);
-                let source: u16 = (val as u16) << 8;
+                let source: u16 = u16::from(val) << 8;
                 let target: u16 = 0xFE00;
                 for i in 0..160 {
                     let val: u8 = self.get(source + i);
                     self.set(target + i, val);
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 

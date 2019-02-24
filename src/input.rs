@@ -14,7 +14,7 @@ pub enum Button {
 pub struct Input {
     buttons: u8,
     joypad: u8,
-    high4: u8
+    high4: u8,
 }
 
 impl Input {
@@ -22,7 +22,7 @@ impl Input {
         Input {
             buttons: 0,
             joypad: 0,
-            high4: 0xF0
+            high4: 0xF0,
         }
     }
 
@@ -65,8 +65,7 @@ impl Input {
         let mut result = self.high4;
         if (self.high4 & 0x10) != 0 {
             result |= !self.buttons;
-        }
-        else if (self.high4 & 0x20) != 0 {
+        } else if (self.high4 & 0x20) != 0 {
             result |= !self.joypad;
         }
 

@@ -1,5 +1,5 @@
-use crate::memory::Memory;
 use crate::instruction::Instruction;
+use crate::memory::Memory;
 
 pub struct Cpu {
     pub pc: u16,
@@ -98,7 +98,7 @@ impl Cpu {
 
         self.jumped = false;
 
-        return cycles;
+        cycles
     }
 
     pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
@@ -216,24 +216,24 @@ impl Cpu {
                 return self.sp;
             }
             Cpu16Register::BC => {
-                high = self.b as u16;
+                high = u16::from(self.b);
                 low = self.c;
             }
             Cpu16Register::DE => {
-                high = self.d as u16;
+                high = u16::from(self.d);
                 low = self.e;
             }
             Cpu16Register::HL => {
-                high = self.h as u16;
+                high = u16::from(self.h);
                 low = self.l;
             }
             Cpu16Register::AF => {
-                high = self.a as u16;
+                high = u16::from(self.a);
                 low = self.f;
             }
         };
 
-        return (high << 8) + (low as u16);
+        (high << 8) + u16::from(low)
     }
 
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
@@ -253,7 +253,7 @@ impl Cpu {
     }
 
     pub fn rjump(&mut self, offset: i8) {
-        self.pc = ((self.pc as i32) + (offset as i32)) as u16;
+        self.pc = (i32::from(self.pc) + i32::from(offset)) as u16;
         self.jumped = true;
     }
 
@@ -282,16 +282,7 @@ impl Cpu {
     pub fn print_state(&self) -> String {
         format!(
             "pc {:X} sp {:X} a {:X} b {:X} c {:X} d {:X} e {:X} f {:X} h {:X} l {:X} ",
-            self.pc,
-            self.sp,
-            self.a,
-            self.b,
-            self.c,
-            self.d,
-            self.e,
-            self.f,
-            self.h,
-            self.l
+            self.pc, self.sp, self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l
         )
     }
 }
