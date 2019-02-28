@@ -1620,7 +1620,5 @@ pub fn read_extended_opcode(opcode: u8, _argstart: u16, _mem: &Memory) -> Instru
             n: 7,
             reg: CpuRegister::A,
         },
-
-        _ => panic!("Unknown extended opcode 0xCB{:2X}", opcode),
     }
 }

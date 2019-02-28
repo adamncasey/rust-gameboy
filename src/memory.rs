@@ -84,7 +84,6 @@ impl Memory {
             0xFF00...0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
             0xFF4C...0xFF7F => &mut self.unused,
             0xFF80...0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
-            _ => panic!("Unknown memory region 0x{:X}", addr),
         }
     }
 
@@ -100,7 +99,6 @@ impl Memory {
             0xFF00...0xFF4B => &self.io[(addr - 0xFF00) as usize],
             0xFF4C...0xFF7F => &self.unused,
             0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
-            _ => panic!("Unknown memory region 0x{:X}", addr),
         }
     }
     fn special(&mut self, addr: u16, val: u8) {
