@@ -1,3 +1,4 @@
+use crate::interrupt;
 use crate::memory::Memory;
 
 pub const GB_HSIZE: usize = 160;
@@ -20,12 +21,6 @@ enum GpuMode {
     VBlank,
 }
 
-pub enum GpuInterrupt {
-    None,
-    VBlank,
-    LCDStatus,
-}
-
 pub struct Gpu {
     mode: GpuMode,
     mode_elapsed: u32,
@@ -43,25 +38,29 @@ impl Gpu {
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) -> GpuInterrupt {
+    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) {
         // TODO SLOW currently load this byte twice
         let lcdc: u8 = mem.get(0xFF40);
         if (lcdc & LCD_ON_BIT) == 0 {
-            return GpuInterrupt::None;
+            return;
         }
 
         let mut vblank = false;
+        let mut newline = false;
+        let mut newmode = false;
 
         self.mode_elapsed += u32::from(elapsed);
         match self.mode {
             GpuMode::OAMRead => {
                 if self.mode_elapsed >= 80 {
+                    newmode = true;
                     self.mode = GpuMode::VRAMRead;
                     self.mode_elapsed -= 80;
                 }
             }
             GpuMode::VRAMRead => {
                 if self.mode_elapsed >= 172 {
+                    newmode = true;
                     self.mode = GpuMode::HBlank;
                     self.mode_elapsed -= 172;
                     Gpu::draw_line(self.line, mem, &mut self.screen_rgba);
@@ -72,6 +71,8 @@ impl Gpu {
                     self.mode_elapsed -= 204;
                     self.line += 1;
 
+                    newline = true;
+                    newmode = true;
                     if self.line == 143 {
                         self.mode = GpuMode::VBlank;
                         vblank = true;
@@ -114,16 +115,36 @@ impl Gpu {
         mem.set(0xFF41, newlcdstat);
 
         if vblank {
-            GpuInterrupt::VBlank
-        } else if self.lcd_status_interrupt() {
-            GpuInterrupt::LCDStatus
-        } else {
-            GpuInterrupt::None
+            interrupt::set_interrupt(interrupt::Interrupt::VBlank, mem);
+        }
+
+        if self.lcd_status_interrupt(mem, newlcdstat, newmode, newline) {
+            println!("lcd_status_interrupt");
+            interrupt::set_interrupt(interrupt::Interrupt::LcdStat, mem);
         }
     }
 
-    fn lcd_status_interrupt(&self) -> bool {
-        // TODO Should we trigger an LCD Status int?
+    fn lcd_status_interrupt(
+        &self,
+        mem: &Memory,
+        lcdstat: u8,
+        newmode: bool,
+        newline: bool,
+    ) -> bool {
+        if newline && lcdstat & 0b10_0000 != 0 {
+            if lcdstat & 0b100 != 0 {
+                if self.line == mem.get(0xFF45) {
+                    return true;
+                }
+            } else if self.line != mem.get(0xFF45) {
+                return true;
+            }
+        }
+
+        if newmode {
+            // TODO figure out mode related interrupt
+        }
+
         false
     }
 

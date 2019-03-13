@@ -1,6 +1,7 @@
-use crate::cpu::{Cpu, CpuInterrupt};
-use crate::gpu::{Gpu, GpuInterrupt};
+use crate::cpu::Cpu;
+use crate::gpu::Gpu;
 use crate::input::Input;
+use crate::interrupt;
 use crate::memory::Memory;
 use crate::rom::Rom;
 
@@ -37,15 +38,18 @@ impl GameBoy {
     pub fn cycle(&mut self, screen_rgba: &mut Vec<u8>, debug: bool) -> bool {
         let cycles: u8 = self.cpu.cycle(&mut self.mem, debug);
 
-        let igpu = self.gpu.cycle(&mut self.mem, cycles);
+        self.gpu.cycle(&mut self.mem, cycles);
         let ijoypad = self.mem.input().fetch_interrupt();
-        let itimer = false;
+        let itimer = self.mem.timer().tick(cycles);
 
-        let int = self.get_interrupt(igpu, ijoypad, itimer);
-        if let CpuInterrupt::None = int {
-            // nothing TODO syntax
-        } else {
-            self.cpu.interrupt(&mut self.mem, int);
+        let mut redraw_screen = false;
+
+        let int = interrupt::fetch_interrupt(&mut self.mem);
+        if let Some(active) = int {
+            if self.cpu.interrupt(&mut self.mem, active) {
+                screen_rgba.copy_from_slice(&self.gpu.screen_rgba);
+                redraw_screen = true;
+            }
         }
 
         self.steps += 1;
@@ -56,33 +60,14 @@ impl GameBoy {
                 cycles,
                 self.cpu.print_state()
             );
+
+            dbg!(self.mem.get(0xFF41));
         }
 
-        if let CpuInterrupt::VBlank = int {
-            screen_rgba.copy_from_slice(&self.gpu.screen_rgba);
-            true
-        } else {
-            false
-        }
+        redraw_screen
     }
 
     pub fn input(&mut self) -> &mut Input {
         self.mem.input()
-    }
-
-    fn get_interrupt(&mut self, igpu: GpuInterrupt, ijoypad: bool, itimer: bool) -> CpuInterrupt {
-        match igpu {
-            GpuInterrupt::VBlank => CpuInterrupt::VBlank,
-            GpuInterrupt::LCDStatus => CpuInterrupt::LCDStatus,
-            _ => {
-                if itimer {
-                    CpuInterrupt::Timer
-                } else if ijoypad {
-                    CpuInterrupt::Joypad
-                } else {
-                    CpuInterrupt::None
-                }
-            }
-        }
     }
 }

@@ -3,10 +3,12 @@ mod gameboy;
 mod gpu;
 mod input;
 mod instruction;
+mod interrupt;
 mod math;
 mod memory;
 mod opcode;
 mod rom;
+mod timer;
 
 use gameboy::GameBoy;
 use gpu::{GB_HSIZE, GB_VSIZE};

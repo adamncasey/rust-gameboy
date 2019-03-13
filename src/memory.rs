@@ -1,4 +1,5 @@
 use crate::input::Input;
+use crate::timer::Timer;
 
 pub struct Memory {
     cartridge: Vec<u8>,
@@ -12,8 +13,9 @@ pub struct Memory {
     // All unused memory is forwarded to the same byte
     // TODO reads shouldn't be affected by writes
     unused: u8,
-    // Input is always interfaced via the MMU
+    // Input & Timer are always interfaced via the MMU
     input: Input,
+    timer: Timer,
 }
 
 const VRAM_SIZE: usize = 8 * 1024;
@@ -37,6 +39,7 @@ impl Memory {
 
             unused: 0,
             input: Input::new(),
+            timer: Timer::new()
         };
 
         mem.set(0xFF40, 0x91);
@@ -47,6 +50,7 @@ impl Memory {
     pub fn get(&self, addr: u16) -> u8 {
         match addr {
             0xFF00 => self.input.value(),
+            0xFF04...0xFF07 => self.timer.read(addr),
             _ => *self.mmu(addr),
         }
     }
@@ -101,11 +105,15 @@ impl Memory {
             0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
         }
     }
+
     fn special(&mut self, addr: u16, val: u8) {
-        // TODO Handle input register
         match addr {
             0xFF00 => {
                 self.input.update(val);
+            }
+            0xFF04...0xFF07 => {
+                println!("Wrote to timer address {:x} {:x}", addr, val);
+                self.timer.write(addr, val);
             }
             0xFF46 => {
                 // OAM Write
@@ -124,5 +132,9 @@ impl Memory {
 
     pub fn input(&mut self) -> &mut Input {
         &mut self.input
+    }
+
+    pub fn timer(&mut self) -> &mut Timer {
+        &mut self.timer
     }
 }

@@ -1,4 +1,5 @@
 use crate::instruction::Instruction;
+use crate::interrupt;
 use crate::memory::Memory;
 
 pub struct Cpu {
@@ -39,19 +40,6 @@ pub enum CpuRegister {
     H,
     L,
 }
-#[derive(Debug, Clone, Copy)]
-pub enum CpuInterrupt {
-    VBlank,
-    LCDStatus,
-    Timer,
-    Joypad,
-    None,
-}
-
-const INT_VBLANK: u8 = 1;
-const INT_LCDSTAT: u8 = 2;
-const INT_TIMER: u8 = 4;
-const INT_JOYPAD: u8 = 16;
 
 impl Cpu {
     pub fn new() -> Cpu {
@@ -101,59 +89,46 @@ impl Cpu {
         cycles
     }
 
-    pub fn interrupt(&mut self, mem: &mut Memory, active: CpuInterrupt) {
+    pub fn interrupt(&mut self, mem: &mut Memory, int: interrupt::Interrupt) -> bool {
         self.halted = false;
 
         if !self.interrupts {
-            //println!("Interrupts disabled {:?}", active);
-            return;
+            
+            return false;
         }
 
         let targetpc;
-        let int;
 
-        let enabled: u8 = mem.get(0xFFFF);
-
-        match active {
-            CpuInterrupt::VBlank if (enabled & INT_VBLANK) != 0 => {
+        match int {
+            interrupt::Interrupt::VBlank => {
                 targetpc = 0x0040;
-                int = INT_VBLANK;
             }
-            CpuInterrupt::LCDStatus if (enabled & INT_LCDSTAT) != 0 => {
+            interrupt::Interrupt::LcdStat => {
                 targetpc = 0x0048;
-                int = INT_LCDSTAT;
+                println!("LcdStat interrupted triggered");
             }
-            CpuInterrupt::Timer if (enabled & INT_TIMER) != 0 => {
+            interrupt::Interrupt::Timer => {
                 targetpc = 0x0050;
-                int = INT_TIMER;
+                println!("Timer interrupted triggered");
             }
-            CpuInterrupt::Joypad if (enabled & INT_JOYPAD) != 0 => {
+            interrupt::Interrupt::Joypad => {
                 targetpc = 0x0060;
-                int = INT_JOYPAD;
-            }
-            CpuInterrupt::None => {
-                return;
-            }
-            _ => {
-                //println!("Interrupt skipped because {:?} enabled {:b}", active, enabled);
-                return;
+                println!("Joypad interrupted triggered");
             }
         };
 
-        /*println!(
-            "Interrupt! {:?} State prior to interrupt: {}",
-            active,
-            self.print_state()
-        );*/
-
+        // Push current pc onto stack, and reset pc to targetpc
         self.sp -= 2;
         mem.set16(self.sp, self.pc);
 
         self.pc = targetpc;
-        mem.set(0xFF0F, int);
+
+        interrupt::reset_interrupt(int, mem);
 
         // Further interrupts are disabled until re-enabled (RETI / EI)
         self.disable_interrupts();
+
+        int == interrupt::Interrupt::VBlank
     }
 
     pub fn set(&mut self, reg: CpuRegister, val: u8) {
