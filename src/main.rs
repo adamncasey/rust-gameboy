@@ -32,10 +32,25 @@ fn main() {
                 .short("d")
                 .help("print debug information verbosely"),
         )
+        .arg(
+            Arg::with_name("watch start")
+                .long("watch-start")
+                .help("Watch Address Start"),
+        )
+        .arg(
+            Arg::with_name("watch end")
+                .long("watch-end")
+                .help("Watch Address End"),
+        )
         .arg(Arg::with_name("INPUT").help("Input Gameboy file").index(1))
         .get_matches();
 
     let filename = matches.value_of("INPUT").unwrap_or("tetris.gb");
+
+    let watch_start =
+        u16::from_str_radix(matches.value_of("watch-start").unwrap_or("FF0F"), 16).unwrap();
+    let watch_end =
+        u16::from_str_radix(matches.value_of("watch-end").unwrap_or("FFFF"), 16).unwrap();
 
     let mut gb = GameBoy::new(filename);
 
@@ -74,6 +89,8 @@ fn main() {
                     Key::Escape => return,
                     Key::D => debugging = true,
                     Key::E => debugging = false,
+                    Key::W => println!("{:?}", gb.read_region(watch_start, watch_end)),
+                    Key::G => println!("{:?}", gb.gpu_trace()),
                     Key::A => gb.input().set_input(Button::A, true),
                     Key::Z => gb.input().set_input(Button::B, true),
                     Key::M => gb.input().set_input(Button::Start, true),

@@ -14,18 +14,38 @@ const SPRITE_DISP_BIT: u8 = 1 << 1;
 const BG_DISP_BIT: u8 = 1;
 
 #[derive(Debug)]
-enum GpuMode {
+pub enum GpuMode {
     OAMRead,
     VRAMRead,
     HBlank,
     VBlank,
 }
 
+#[derive(Debug, Clone)]
+pub struct GpuDebugTrace {
+    sprites: u16,
+    yflipped_sprite_lines: u16,
+    xflipped_sprite_lines: u16,
+}
+
+impl GpuDebugTrace {
+    fn new() -> GpuDebugTrace {
+        GpuDebugTrace {
+            sprites: 0,
+            yflipped_sprite_lines: 0,
+            xflipped_sprite_lines: 0,
+        }
+    }
+}
+
 pub struct Gpu {
-    mode: GpuMode,
-    mode_elapsed: u32,
-    line: u8,
+    pub mode: GpuMode,
+    pub mode_elapsed: u32,
+    pub line: u8,
     pub screen_rgba: Vec<u8>,
+    debug_current_frame: GpuDebugTrace,
+    pub debug_last_frame: GpuDebugTrace,
+    pub debug_lcd_pwr: bool,
 }
 
 impl Gpu {
@@ -35,15 +55,28 @@ impl Gpu {
             mode_elapsed: 0,
             line: 0,
             screen_rgba: vec![255; GB_VSIZE * GB_HSIZE * 4],
+            debug_current_frame: GpuDebugTrace::new(),
+            debug_last_frame: GpuDebugTrace::new(),
+            debug_lcd_pwr: false,
         }
     }
 
     pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) {
         // TODO SLOW currently load this byte twice
         let lcdc: u8 = mem.get(0xFF40);
+
         if (lcdc & LCD_ON_BIT) == 0 {
+            self.debug_lcd_pwr = false;
+            let lcdstat: u8 = mem.get(0xFF41);
+
+            let newlcdstat: u8 = lcdstat & 0xFC;
+
+            mem.set(0xFF41, newlcdstat);
+
             return;
         }
+
+        self.debug_lcd_pwr = true;
 
         let mut vblank = false;
         let mut newline = false;
@@ -63,7 +96,7 @@ impl Gpu {
                     newmode = true;
                     self.mode = GpuMode::HBlank;
                     self.mode_elapsed -= 172;
-                    Gpu::draw_line(self.line, mem, &mut self.screen_rgba);
+                    self.draw_line(mem);
                 }
             }
             GpuMode::HBlank => {
@@ -87,6 +120,8 @@ impl Gpu {
                     self.mode_elapsed -= 456;
 
                     if self.line > 153 {
+                        self.debug_last_frame = self.debug_current_frame.clone();
+                        self.debug_current_frame = GpuDebugTrace::new();
                         // Blank screen for re-writing
                         self.screen_rgba.resize(0, 255);
                         self.screen_rgba.resize(GB_VSIZE * GB_HSIZE * 4, 255);
@@ -148,7 +183,7 @@ impl Gpu {
         false
     }
 
-    fn draw_line(line: u8, mem: &Memory, rgba: &mut [u8]) {
+    fn draw_line(&mut self, mem: &Memory) {
         let lcdc: u8 = mem.get(0xFF40);
         let tiledataselect = (lcdc & TILEDATA_BIT) != 0;
         let tiles = tiles_start(tiledataselect);
@@ -158,24 +193,32 @@ impl Gpu {
         if lcdc & BG_DISP_BIT != 0 {
             let tilemap = select_tilemap((lcdc & BG_TILEMAP_BIT) != 0);
             draw_background(
-                line,
+                self.line,
                 mem,
                 bg_win_colours,
                 tiles,
                 tiledataselect,
                 tilemap,
-                rgba,
+                &mut self.screen_rgba,
             );
         }
 
         if lcdc & WINDOW_DISP_BIT != 0 {
             let _tilemap = select_tilemap(lcdc & WINDOW_TILEMAP_BIT != 0);
-            //draw_window(line, mem, bg_win_colours, tiles, tilemap, rgba);
+            // TODO draw_window
         }
 
         if lcdc & SPRITE_DISP_BIT != 0 {
             let sprite_height: u8 = get_sprite_size(lcdc);
-            draw_sprites(line, mem, sprite_height, 0x8000, bg_win_colours, rgba);
+            draw_sprites(
+                self.line,
+                mem,
+                sprite_height,
+                0x8000,
+                bg_win_colours,
+                &mut self.screen_rgba,
+                &mut self.debug_current_frame,
+            );
         } else {
             //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
         }
@@ -192,11 +235,11 @@ fn draw_background(
     rgba: &mut [u8],
 ) {
     let scy: u8 = mem.get(0xFF42);
-    let bgy = u16::from(line).wrapping_add(u16::from(scy)) % 256;
+    let bgy: u16 = u16::from(line.wrapping_add(scy));
     let vtile = bgy / 8;
 
     if vtile >= 32 {
-        //println!("reached vend of tile {} {}", vtile, line);
+        println!("reached vend of tile {} {}", vtile, line);
         return;
     }
 
@@ -208,7 +251,7 @@ fn draw_background(
         let bgx = ((i as u16) + u16::from(scx)) % 256;
         let htile = bgx / 8;
         if htile >= 32 {
-            //println!("reached hend of tile {} {} {}", htile, line, i);
+            println!("reached hend of tile {} {} {}", htile, line, i);
             return;
         }
 
@@ -239,28 +282,43 @@ fn draw_sprites(
     tiledata: u16,
     bgp: u8,
     rgba: &mut [u8],
+    debug: &mut GpuDebugTrace,
 ) {
     let palettes = (mem.get(0xFF48), mem.get(0xFF49));
     let bgcolouroverdraw = apply_palette(0, bgp);
+
+    let mut sprites_drawn = 0;
     // for each sprite
     for i in 0..40 {
+        if sprites_drawn >= 10 {
+            return;
+        }
+
         let s = load_sprite(mem, i, palettes);
 
-        if !sprite_in_row(i16::from(line), s.y, sprite_height) || !sprite_on_disp(s.x) {
+        if !sprite_in_row(line, s.y, sprite_height) || !sprite_on_disp(s.x) {
             //println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
             continue;
         }
 
         // look up tile pixel data
-        let ty = (s.y - u16::from(line) as i16) as u16; // TODO yflip
+        let mut ty: u8 = ((s.y - u16::from(line) as i16).abs() % 8) as u8;
+
+        if s.yflip {
+            debug.yflipped_sprite_lines += 1;
+            ty = sprite_height - ty;
+        }
+
+        let mut drawn = false;
 
         // TODO xflip:
-        for tx in 0..8 {
-            let x = s.x + tx;
+        for px in 0..8 {
+            let x = s.x + px;
             if x < 0 || x > GB_HSIZE as i16 {
                 //println!("Skipping sprite x {} {}", x, tx);
                 continue;
             }
+            drawn = true;
             let rgba_start = (line as usize * GB_HSIZE + x as usize) * 4;
 
             // Is priority bit set or is the bg value zero?
@@ -269,7 +327,15 @@ fn draw_sprites(
                 continue;
             }
             // draw pixel
-            let tilerow = get_tile_row_data(mem, tiledata, u32::from(s.tile) as i32, ty % 8);
+            let tilerow = get_tile_row_data(mem, tiledata, u32::from(s.tile) as i32, u16::from(ty));
+
+            let tx = if s.xflip {
+                debug.xflipped_sprite_lines += 1;
+                8 - px
+            } else {
+                px
+            };
+
             let colour = get_tile_colour(tilerow, tx as u8);
             let pixel = apply_palette(colour, s.palette);
 
@@ -281,16 +347,22 @@ fn draw_sprites(
                 //println!("Skipped pixel {}", colour);
             }
         }
+        if drawn {
+            sprites_drawn += 1;
+        }
     }
+
+    debug.sprites += sprites_drawn;
 }
 
+#[derive(Debug, Copy, Clone)]
 struct Sprite {
     y: i16,
     x: i16,
     tile: u8,
     priority: bool,
-    _yflip: bool,
-    _xflip: bool,
+    yflip: bool,
+    xflip: bool,
     palette: u8,
 }
 
@@ -307,8 +379,8 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
         x: u16::from(mem.get(addr + 1)) as i16 - 8,
         tile: mem.get(addr + 2),
         priority: options & 0b100_0000 == 0,
-        _yflip: options & 0b10_0000 != 0,
-        _xflip: options & 0b1_0000 != 0,
+        yflip: options & 0b10_0000 != 0,
+        xflip: options & 0b1_0000 != 0,
         palette: if options & 0b1000 != 0 {
             palettes.1
         } else {
@@ -317,8 +389,11 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
     }
 }
 
-fn sprite_in_row(line: i16, sy: i16, height: u8) -> bool {
-    sy < line && (sy + i16::from(height)) > line
+fn sprite_in_row(line: u8, sy: i16, height: u8) -> bool {
+    let line = i32::from(line);
+    let sy = i32::from(sy);
+
+    sy < line && (sy + i32::from(height)) > line
 }
 
 fn sprite_on_disp(sx: i16) -> bool {
@@ -395,5 +470,17 @@ fn get_sprite_size(lcdc: u8) -> u8 {
         16
     } else {
         8
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_sprite_in_row() {
+        assert_eq!(true, sprite_in_row(0, -8, 16));
+        assert_eq!(false, sprite_in_row(0, -8, 8));
+
+        assert_eq!(false, sprite_in_row(0, 65535, 8));
     }
 }

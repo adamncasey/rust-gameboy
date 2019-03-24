@@ -93,7 +93,6 @@ impl Cpu {
         self.halted = false;
 
         if !self.interrupts {
-            
             return false;
         }
 
@@ -215,8 +214,14 @@ impl Cpu {
         self.f = (z as u8) << 7 | (n as u8) << 6 | (h as u8) << 5 | (c as u8) << 4;
     }
 
-    pub fn c_flag(&self) -> u8 {
-        (self.f & (1 << 4)) >> 4
+    pub fn c_flag(&self) -> bool {
+        (self.f & (1 << 4)) != 0
+    }
+    pub fn h_flag(&self) -> bool {
+        (self.f & (1 << 5)) != 0
+    }
+    pub fn n_flag(&self) -> bool {
+        (self.f & (1 << 6)) != 0
     }
     pub fn z_flag(&self) -> bool {
         (self.f & (1 << 7)) != 0
@@ -251,7 +256,6 @@ impl Cpu {
 
     pub fn halt(&mut self) {
         self.halted = true;
-        println!("HALT");
     }
 
     pub fn print_state(&self) -> String {

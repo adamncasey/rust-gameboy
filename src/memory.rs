@@ -1,4 +1,5 @@
 use crate::input::Input;
+use crate::interrupt::{set_interrupt, Interrupt};
 use crate::timer::Timer;
 
 pub struct Memory {
@@ -39,7 +40,7 @@ impl Memory {
 
             unused: 0,
             input: Input::new(),
-            timer: Timer::new()
+            timer: Timer::new(),
         };
 
         mem.set(0xFF40, 0x91);
@@ -134,7 +135,9 @@ impl Memory {
         &mut self.input
     }
 
-    pub fn timer(&mut self) -> &mut Timer {
-        &mut self.timer
+    pub fn tick_timer(&mut self, cycles: u8) {
+        if self.timer.tick(cycles) {
+            set_interrupt(Interrupt::Timer, self);
+        }
     }
 }

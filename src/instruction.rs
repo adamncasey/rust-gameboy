@@ -258,6 +258,7 @@ pub enum Instruction {
     },
     RRHL,
     SCF,
+    DAA,
     HALT,
 
     ILLEGAL,
@@ -384,6 +385,7 @@ impl Instruction {
             Instruction::RR { .. } => 2,
             Instruction::RRHL => 2,
             Instruction::SCF => 1,
+            Instruction::DAA => 1,
             Instruction::HALT => 1,
 
             Instruction::ILLEGAL => panic!("Illegal instruction"),
@@ -475,7 +477,7 @@ impl Instruction {
                 }
             }
             Instruction::JPNC { addr } => {
-                if cpu.c_flag() == 0 {
+                if !cpu.c_flag() {
                     cpu.jump(addr);
                     cycles = 16;
                 } else {
@@ -483,7 +485,7 @@ impl Instruction {
                 }
             }
             Instruction::JPC { addr } => {
-                if cpu.c_flag() == 1 {
+                if cpu.c_flag() {
                     cpu.jump(addr);
                     cycles = 16;
                 } else {
@@ -516,7 +518,7 @@ impl Instruction {
                 }
             }
             Instruction::JRNC { offset } => {
-                if cpu.c_flag() == 0 {
+                if !cpu.c_flag() {
                     cpu.rjump(offset + 2);
                     cycles = 12;
                 } else {
@@ -524,7 +526,7 @@ impl Instruction {
                 }
             }
             Instruction::JRC { offset } => {
-                if cpu.c_flag() == 1 {
+                if cpu.c_flag() {
                     cpu.rjump(offset + 2);
                     cycles = 12;
                 } else {
@@ -548,7 +550,7 @@ impl Instruction {
                 }
             }
             Instruction::CALLNC { addr } => {
-                if cpu.c_flag() == 0 {
+                if !cpu.c_flag() {
                     cpu.sp -= 2;
                     mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                     cpu.jump(addr);
@@ -568,7 +570,7 @@ impl Instruction {
                 }
             }
             Instruction::CALLC { addr } => {
-                if cpu.c_flag() == 1 {
+                if cpu.c_flag() {
                     cpu.sp -= 2;
                     mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                     cpu.jump(addr);
@@ -598,7 +600,7 @@ impl Instruction {
                 }
             }
             Instruction::RETNC => {
-                if cpu.c_flag() == 0 {
+                if !cpu.c_flag() {
                     cpu.ret(mem);
                     cycles = 20;
                 } else {
@@ -606,7 +608,7 @@ impl Instruction {
                 }
             }
             Instruction::RETC => {
-                if cpu.c_flag() == 1 {
+                if cpu.c_flag() {
                     cpu.ret(mem);
                     cycles = 20;
                 } else {
@@ -674,17 +676,17 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::SBCR { reg } => {
-                let val: u8 = cpu.get(reg) + cpu.c_flag();
+                let val: u8 = cpu.get(reg) + cpu.c_flag() as u8;
                 math::subtract(cpu, val);
                 cycles = 4;
             }
             Instruction::SBCA { reg_addr } => {
-                let val: u8 = mem.get(cpu.get16(reg_addr)) + cpu.c_flag();
+                let val: u8 = mem.get(cpu.get16(reg_addr)) + cpu.c_flag() as u8;
                 math::subtract(cpu, val);
                 cycles = 8;
             }
             Instruction::SBCI { val } => {
-                let newval = val.wrapping_add(cpu.c_flag());
+                let newval = val.wrapping_add(cpu.c_flag() as u8);
                 math::subtract(cpu, newval);
                 cycles = 8;
             }
@@ -712,18 +714,18 @@ impl Instruction {
                 cycles = 16;
             }
             Instruction::ADC { reg } => {
-                let val: u8 = cpu.get(reg) + cpu.c_flag();
+                let val: u8 = cpu.get(reg) + cpu.c_flag() as u8;
                 math::add(cpu, val);
                 cycles = 4;
             }
             Instruction::ADCA => {
-                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)) + cpu.c_flag();
+                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)) + cpu.c_flag() as u8;
                 math::add(cpu, val);
                 cycles = 8;
             }
             Instruction::ADCI { val } => {
                 // TODO Carry flag interaction?
-                math::add(cpu, val.wrapping_add(cpu.c_flag()));
+                math::add(cpu, val.wrapping_add(cpu.c_flag() as u8));
                 cycles = 8;
             }
             Instruction::XORR { reg } => {
@@ -990,6 +992,10 @@ impl Instruction {
                 cpu.set_flags(cpu.z_flag(), false, false, true);
                 cycles = 4;
             }
+            Instruction::DAA => {
+                math::daa(cpu);
+                cycles = 4;
+            }
             Instruction::HALT => {
                 cpu.halt();
                 cycles = 4;
@@ -997,5 +1003,41 @@ impl Instruction {
         };
 
         cycles
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cpu::{Cpu, CpuRegister};
+    use crate::instruction::Instruction;
+    use crate::memory::Memory;
+
+    #[test]
+    fn daa_instruction() {
+        let mut cpu = Cpu::new();
+        let mut mem = Memory::new(vec![0; 32 * 1024]);
+
+        let test_cases = vec![
+            (0b0001_0001, 0b0000_0000, 0b0001_0001),
+            (0b0000_1001, 0b0000_0001, 0b0001_0000),
+            (0b0001_1000, 0b0001_1000, 0b0011_0110),
+        ];
+
+        for test in test_cases.iter() {
+            dbg!(test);
+            cpu.a = test.0;
+            cpu.b = test.1;
+
+            let instr = Instruction::ADDR {
+                reg: CpuRegister::B,
+            };
+
+            instr.execute(&mut cpu, &mut mem);
+
+            let instr = Instruction::DAA;
+
+            assert_eq!(instr.execute(&mut cpu, &mut mem), 4);
+            assert_eq!(cpu.a, test.2);
+        }
     }
 }

@@ -1,5 +1,5 @@
 use crate::cpu::Cpu;
-use crate::gpu::Gpu;
+use crate::gpu::{Gpu, GpuDebugTrace};
 use crate::input::Input;
 use crate::interrupt;
 use crate::memory::Memory;
@@ -39,8 +39,8 @@ impl GameBoy {
         let cycles: u8 = self.cpu.cycle(&mut self.mem, debug);
 
         self.gpu.cycle(&mut self.mem, cycles);
-        let ijoypad = self.mem.input().fetch_interrupt();
-        let itimer = self.mem.timer().tick(cycles);
+
+        self.mem.tick_timer(cycles);
 
         let mut redraw_screen = false;
 
@@ -55,13 +55,15 @@ impl GameBoy {
         self.steps += 1;
         if debug {
             println!(
-                "State after {} total steps {} cycles: {}",
+                "State after {} total steps {} cycles: {}. | Gpu PWR {} mode: {:?} elapsed {} line {}",
                 self.steps,
                 cycles,
-                self.cpu.print_state()
+                self.cpu.print_state(),
+                self.gpu.debug_lcd_pwr,
+                self.gpu.mode,
+                self.gpu.mode_elapsed,
+                self.gpu.line
             );
-
-            dbg!(self.mem.get(0xFF41));
         }
 
         redraw_screen
@@ -69,5 +71,20 @@ impl GameBoy {
 
     pub fn input(&mut self) -> &mut Input {
         self.mem.input()
+    }
+
+    pub fn read_region(&self, start: u16, end: u16) -> Vec<u8> {
+        assert!(end >= start);
+        let mut result = Vec::with_capacity(usize::from(end - start + 1));
+
+        for i in start..=end {
+            result.push(self.mem.get(i));
+        }
+
+        result
+    }
+
+    pub fn gpu_trace(&self) -> GpuDebugTrace {
+        self.gpu.debug_last_frame.clone()
     }
 }

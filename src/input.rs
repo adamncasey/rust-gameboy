@@ -55,10 +55,8 @@ impl Input {
                 self.joypad = func(self.joypad, 3);
             }
         }
-    }
 
-    pub fn fetch_interrupt(&mut self) -> bool {
-        false
+        // TODO interrupt
     }
 
     pub fn value(&self) -> u8 {

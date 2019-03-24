@@ -119,6 +119,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             val: mem.get(argstart),
             reg: CpuRegister::H,
         },
+        0x27 => Instruction::DAA,
         0x28 => Instruction::JRZ {
             offset: mem.get(argstart) as i8,
         },

@@ -123,6 +123,7 @@ impl Timer {
             self.baseclock_count -= 64;
         }
 
+        println!("Timer triggered");
         interrupt
     }
 }
