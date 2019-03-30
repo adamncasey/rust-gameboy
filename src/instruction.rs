@@ -927,21 +927,25 @@ impl Instruction {
             Instruction::RLCA => {
                 let newval = math::rlc(cpu, cpu.get(CpuRegister::A));
                 cpu.set(CpuRegister::A, newval);
+                cpu.set_flags(false, false, false, cpu.c_flag());
                 cycles = 4;
             }
             Instruction::RRCA => {
                 let newval = math::rrc(cpu, cpu.get(CpuRegister::A));
                 cpu.set(CpuRegister::A, newval);
+                cpu.set_flags(false, false, false, cpu.c_flag());
                 cycles = 4;
             }
             Instruction::RLA => {
                 let newval = math::rl(cpu, cpu.get(CpuRegister::A));
                 cpu.set(CpuRegister::A, newval);
+                cpu.set_flags(false, false, false, cpu.c_flag());
                 cycles = 4;
             }
             Instruction::RRA => {
                 let newval = math::rr(cpu, cpu.get(CpuRegister::A));
                 cpu.set(CpuRegister::A, newval);
+                cpu.set_flags(false, false, false, cpu.c_flag());
                 cycles = 4;
             }
             Instruction::RLC { reg } => {

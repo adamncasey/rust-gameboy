@@ -35,8 +35,33 @@ impl GameBoy {
         &self.title
     }
 
-    pub fn cycle(&mut self, screen_rgba: &mut Vec<u8>, debug: bool) -> bool {
+    pub fn cycle(
+        &mut self,
+        screen_rgba: &mut Vec<u8>,
+        debug: bool,
+        debug_pc_panic: Option<u16>,
+    ) -> bool {
+        if debug {
+            println!(
+                "State after {} total steps {} | Gpu PWR {} mode: {:?} elapsed {} ly {} stat {:X} lcdc {:X}",
+                self.steps,
+                self.cpu.print_state(),
+                self.gpu.debug_lcd_pwr,
+                self.gpu.mode,
+                self.gpu.mode_elapsed,
+                self.gpu.line,
+                self.mem.get(0xFF41),
+                self.mem.get(0xFF40)
+            );
+        }
+
         let cycles: u8 = self.cpu.cycle(&mut self.mem, debug);
+
+        if let Some(pc) = debug_pc_panic {
+            if self.cpu.pc == pc {
+                panic!("Reached panic-at-pc");
+            }
+        }
 
         self.gpu.cycle(&mut self.mem, cycles);
 
@@ -53,18 +78,6 @@ impl GameBoy {
         }
 
         self.steps += 1;
-        if debug {
-            println!(
-                "State after {} total steps {} cycles: {}. | Gpu PWR {} mode: {:?} elapsed {} line {}",
-                self.steps,
-                cycles,
-                self.cpu.print_state(),
-                self.gpu.debug_lcd_pwr,
-                self.gpu.mode,
-                self.gpu.mode_elapsed,
-                self.gpu.line
-            );
-        }
 
         redraw_screen
     }

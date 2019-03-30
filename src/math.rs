@@ -198,6 +198,7 @@ pub fn rr(cpu: &mut Cpu, val: u8) -> u8 {
 
     res
 }
+
 pub fn rl(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = cpu.c_flag() as u8;
     let c: bool = (val & 0b1000_0000) != 0;

@@ -42,6 +42,12 @@ fn main() {
                 .long("watch-end")
                 .help("Watch Address End"),
         )
+        .arg(
+            Arg::with_name("panic-at-pc")
+                .long("panic-at-pc")
+                .help("Panic at given Program Counter value")
+                .default_value("FFFF"),
+        )
         .arg(Arg::with_name("INPUT").help("Input Gameboy file").index(1))
         .get_matches();
 
@@ -69,8 +75,14 @@ fn main() {
     let mut screen_rgba: Vec<u8> = vec![255; GB_HSIZE * GB_VSIZE * 4];
 
     let mut debugging = matches.is_present("debug");
+
+    let pc_panic =
+        u16::from_str_radix(matches.value_of("panic-at-pc").unwrap(), 16).unwrap();
+
+    println!("Will panic when pc == {:X?}", pc_panic);
+
     loop {
-        let drawn = gb.cycle(&mut screen_rgba, debugging);
+        let drawn = gb.cycle(&mut screen_rgba, debugging, Some(pc_panic));
 
         if drawn {
             window.clear(&Color::BLACK);

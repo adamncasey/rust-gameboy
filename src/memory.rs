@@ -2,6 +2,8 @@ use crate::input::Input;
 use crate::interrupt::{set_interrupt, Interrupt};
 use crate::timer::Timer;
 
+use std::{str, vec};
+
 pub struct Memory {
     cartridge: Vec<u8>,
     vram: Vec<u8>,
@@ -17,6 +19,8 @@ pub struct Memory {
     // Input & Timer are always interfaced via the MMU
     input: Input,
     timer: Timer,
+
+    serial_buf: Vec<u8>
 }
 
 const VRAM_SIZE: usize = 8 * 1024;
@@ -41,9 +45,14 @@ impl Memory {
             unused: 0,
             input: Input::new(),
             timer: Timer::new(),
+
+            serial_buf: Vec::new()
         };
 
         mem.set(0xFF40, 0x91);
+        mem.set(0xFF47, 0xFC);
+        mem.set(0xFF48, 0xFF);
+        mem.set(0xFF49, 0xFF);
 
         mem
     }
@@ -111,6 +120,10 @@ impl Memory {
         match addr {
             0xFF00 => {
                 self.input.update(val);
+            }
+            0xFF01 => {
+                self.serial_buf.push(val);
+                println!("-- {}", str::from_utf8(&self.serial_buf).unwrap());
             }
             0xFF04...0xFF07 => {
                 println!("Wrote to timer address {:x} {:x}", addr, val);
