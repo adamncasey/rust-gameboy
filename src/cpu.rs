@@ -68,13 +68,9 @@ impl Cpu {
         let instr = Instruction::read(&mem, self.pc);
 
         if debug {
-            println!(
-                "--- Executing |{:X}|{:X}|{:X}| {:?}",
-                mem.get(self.pc),
-                mem.get(self.pc + 1),
-                mem.get(self.pc + 2),
-                instr
-            );
+            let instrs = Instruction::disassemble(mem, self.pc, 5);
+
+            println!("--- Disassembly at PC {:4X} {:?}", self.pc, instrs);
         }
 
         let cycles = instr.execute(self, mem);
@@ -260,7 +256,7 @@ impl Cpu {
 
     pub fn print_state(&self) -> String {
         format!(
-            "pc {:X} sp {:X} a {:X} b {:X} c {:X} d {:X} e {:X} f {:X} h {:X} l {:X} ",
+            "pc {:4X} sp {:2X} a {:2X} b {:2X} c {:2X} d {:2X} e {:2X} f {:2X} h {:2X} l {:2X}",
             self.pc, self.sp, self.a, self.b, self.c, self.d, self.e, self.f, self.h, self.l
         )
     }

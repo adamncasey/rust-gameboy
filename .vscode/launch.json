@@ -10,7 +10,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/gbrust.exe",
-            "args": ["-d", "C:\\Users\\Adam\\gb-test-roms-master\\cpu_instrs\\individual\\07-jr,jp,call,ret,rst.gb"],
+            "args": ["-d", "tetris.gb"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

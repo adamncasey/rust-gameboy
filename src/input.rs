@@ -61,10 +61,10 @@ impl Input {
 
     pub fn value(&self) -> u8 {
         let mut result = self.high4;
-        if (self.high4 & 0x10) != 0 {
-            result |= !self.buttons;
-        } else if (self.high4 & 0x20) != 0 {
+        if (self.high4 & 0x20) != 0 {
             result |= !self.joypad;
+        } else if (self.high4 & 0x10) != 0 {
+            result |= !self.buttons;
         }
 
         result

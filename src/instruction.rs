@@ -275,6 +275,19 @@ impl Instruction {
         read_opcode(opcode, addr + 1, mem)
     }
 
+    pub fn disassemble(mem: &Memory, start_addr: u16, num_instrs: usize) -> Vec<Instruction>
+    {
+        let mut instrs = Vec::with_capacity(num_instrs);
+        let mut addr = start_addr;
+
+        for _ in 0..num_instrs {
+            instrs.push(Instruction::read(mem, addr));
+            addr = addr.wrapping_add(Instruction::mem_size(instrs.last().unwrap()));
+        }
+
+        instrs
+    }
+
     pub fn mem_size(inst: &Instruction) -> u16 {
         match *inst {
             Instruction::Noop => 1,
