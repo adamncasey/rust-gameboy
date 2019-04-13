@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "gameboy",
-    "sfml-gameboy"
+    "sfml-gameboy",
+    "wasm-gameboy"
 ]

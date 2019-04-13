@@ -5,9 +5,10 @@ authors = ["Adam Casey <adamncasey@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+gameboy = { path = "../gameboy" }
+
 sfml = "*"
 clap = "*"
-gameboy = { path = "../gameboy" }
 
 [profile.release]
 debug = true
