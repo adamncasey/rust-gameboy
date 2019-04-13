@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io;
-use std::io::prelude::*;
 use std::str;
 
 #[derive(Debug)]
@@ -15,16 +12,13 @@ const ROM_TITLE_END: usize = ROM_TITLE_START + 16;
 const ROM_TYPE_OFFSET: usize = 0x147;
 
 impl Rom {
-    pub fn load(path: &str) -> io::Result<Rom> {
-        // Load file contents at path into rom_contents
-        let mut file = File::open(path)?;
+    pub fn load(rom_contents: Vec<u8>) -> Rom {
 
         let mut rom = Rom {
             game_title: String::from(""),
             rom_type: 255,
-            rom_contents: vec![],
+            rom_contents: rom_contents,
         };
-        file.read_to_end(&mut rom.rom_contents)?;
 
         // Copy out game_title
         let bytes = &rom.rom_contents[ROM_TITLE_START..ROM_TITLE_END];
@@ -39,6 +33,6 @@ impl Rom {
         // Copy out rom_type
         rom.rom_type = rom.rom_contents[ROM_TYPE_OFFSET as usize];
 
-        Ok(rom)
+        rom
     }
 }

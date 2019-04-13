@@ -15,8 +15,8 @@ pub struct GameBoy {
 }
 
 impl GameBoy {
-    pub fn new(rom_filename: &str) -> GameBoy {
-        let cartridge: Rom = Rom::load(rom_filename).unwrap();
+    pub fn new(rom_contents: Vec<u8>) -> GameBoy {
+        let cartridge: Rom = Rom::load(rom_contents);
 
         if cartridge.rom_type != 0 {
             println!("ROM type unsupported {}", cartridge.rom_type);
@@ -35,12 +35,7 @@ impl GameBoy {
         &self.title
     }
 
-    pub fn cycle(
-        &mut self,
-        screen_rgba: &mut Vec<u8>,
-        debug: bool,
-        debug_pc_panic: Option<u16>,
-    ) -> bool {
+    pub fn cycle(&mut self, debug: bool, debug_pc_panic: Option<u16>) -> bool {
         if debug {
             println!(
                 "State after {} total steps {} | Gpu PWR {} mode: {:?} elapsed {} ly {} stat {:X} lcdc {:X}",
@@ -72,7 +67,6 @@ impl GameBoy {
         let int = interrupt::fetch_interrupt(&mut self.mem);
         if let Some(active) = int {
             if self.cpu.interrupt(&mut self.mem, active) {
-                screen_rgba.copy_from_slice(&self.gpu.screen_rgba);
                 redraw_screen = true;
             }
         }
@@ -99,5 +93,13 @@ impl GameBoy {
 
     pub fn gpu_trace(&self) -> GpuDebugTrace {
         self.gpu.debug_last_frame.clone()
+    }
+
+    pub fn buffer(&self) -> *const u8 {
+        self.gpu.screen_rgba.as_ptr()
+    }
+
+    pub fn buffer_vec(&self) -> &Vec<u8> {
+        &self.gpu.screen_rgba
     }
 }

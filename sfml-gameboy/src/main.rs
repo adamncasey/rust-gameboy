@@ -1,28 +1,21 @@
-mod cpu;
-mod gameboy;
-mod gpu;
-mod input;
-mod instruction;
-mod interrupt;
-mod math;
-mod memory;
-mod opcode;
-mod rom;
-mod timer;
+extern crate gameboy;
 
-use gameboy::GameBoy;
-use gpu::{GB_HSIZE, GB_VSIZE};
-use input::Button;
+use gameboy::gameboy::GameBoy;
+use gameboy::gpu::{GB_HSIZE, GB_VSIZE};
+use gameboy::input::Button;
 
 extern crate sfml;
 use sfml::graphics::{Color, RenderTarget, RenderWindow, Sprite, Texture, Transformable};
 use sfml::system::Vector2f;
 use sfml::window::{Event, Key, Style};
+use std::fs::File;
+use std::io;
+use std::io::prelude::*;
 
 extern crate clap;
 use clap::{App, Arg};
 
-fn main() {
+fn main() -> Result<(), io::Error> {
     let matches = App::new("gb-rust")
         .version("1.0")
         .about("Gameboy emulator in Rust!")
@@ -58,7 +51,11 @@ fn main() {
     let watch_end =
         u16::from_str_radix(matches.value_of("watch-end").unwrap_or("FFFF"), 16).unwrap();
 
-    let mut gb = GameBoy::new(filename);
+    let mut file = File::open(filename)?;
+    let mut rom_contents = Vec::new();
+    file.read_to_end(&mut rom_contents)?;
+
+    let mut gb = GameBoy::new(rom_contents);
 
     println!("Loaded rom: {:?}", gb.title());
 
@@ -76,15 +73,15 @@ fn main() {
 
     let mut debugging = matches.is_present("debug");
 
-    let pc_panic =
-        u16::from_str_radix(matches.value_of("panic-at-pc").unwrap(), 16).unwrap();
+    let pc_panic = u16::from_str_radix(matches.value_of("panic-at-pc").unwrap(), 16).unwrap();
 
     println!("Will panic when pc == {:X?}", pc_panic);
 
     loop {
-        let drawn = gb.cycle(&mut screen_rgba, debugging, Some(pc_panic));
+        let drawn = gb.cycle(debugging, Some(pc_panic));
 
         if drawn {
+            screen_rgba.copy_from_slice(gb.buffer_vec());
             window.clear(&Color::BLACK);
             screen.update_from_pixels(&screen_rgba, GB_HSIZE as u32, GB_VSIZE as u32, 0, 0);
 
@@ -96,9 +93,9 @@ fn main() {
 
         if let Some(event) = window.poll_event() {
             match event {
-                Event::Closed => return,
+                Event::Closed => return Ok(()),
                 Event::KeyPressed { code, .. } => match code {
-                    Key::Escape => return,
+                    Key::Escape => return Ok(()),
                     Key::D => debugging = true,
                     Key::E => debugging = false,
                     Key::W => println!("{:?}", gb.read_region(watch_start, watch_end)),
