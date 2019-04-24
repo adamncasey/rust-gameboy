@@ -25,7 +25,7 @@ impl Rom {
         rom.game_title = String::from(match str::from_utf8(bytes) {
             Result::Ok(val) => val,
             Result::Err(_) => {
-                println!("Error loading rom title {:?}", bytes);
+                //println!("Error loading rom title {:?}", bytes);
                 "Empty title"
             }
         });

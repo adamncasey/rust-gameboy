@@ -70,7 +70,7 @@ impl Cpu {
         if debug {
             let instrs = Instruction::disassemble(mem, self.pc, 5);
 
-            println!("--- Disassembly at PC {:4X} {:?}", self.pc, instrs);
+            //println!("--- Disassembly at PC {:4X} {:?}", self.pc, instrs);
         }
 
         let cycles = instr.execute(self, mem);
@@ -100,15 +100,15 @@ impl Cpu {
             }
             interrupt::Interrupt::LcdStat => {
                 targetpc = 0x0048;
-                println!("LcdStat interrupted triggered");
+                //println!("LcdStat interrupted triggered");
             }
             interrupt::Interrupt::Timer => {
                 targetpc = 0x0050;
-                println!("Timer interrupted triggered");
+                //println!("Timer interrupted triggered");
             }
             interrupt::Interrupt::Joypad => {
                 targetpc = 0x0060;
-                println!("Joypad interrupted triggered");
+                //println!("Joypad interrupted triggered");
             }
         };
 
@@ -242,12 +242,12 @@ impl Cpu {
 
     pub fn enable_interrupts(&mut self) {
         self.interrupts = true;
-        //println!("Interrupts enabled");
+        ////println!("Interrupts enabled");
     }
 
     pub fn disable_interrupts(&mut self) {
         self.interrupts = false;
-        //println!("Interrupts disabled");
+        ////println!("Interrupts disabled");
     }
 
     pub fn halt(&mut self) {

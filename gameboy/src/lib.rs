@@ -2,7 +2,7 @@ mod cpu;
 pub mod gameboy;
 pub mod gpu;
 pub mod input;
-mod instruction;
+pub mod instruction;
 mod interrupt;
 mod math;
 mod memory;

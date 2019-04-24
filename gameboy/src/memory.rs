@@ -123,16 +123,16 @@ impl Memory {
             }
             0xFF01 => {
                 self.serial_buf.push(val);
-                println!("-- {}", str::from_utf8(&self.serial_buf).unwrap());
+                ////println!("-- {}", str::from_utf8(&self.serial_buf).unwrap());
             }
             0xFF04...0xFF07 => {
-                println!("Wrote to timer address {:x} {:x}", addr, val);
+                ////println!("Wrote to timer address {:x} {:x}", addr, val);
                 self.timer.write(addr, val);
             }
             0xFF46 => {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
-                //println!("DMA from {:x}", source);
+                ////println!("DMA from {:x}", source);
                 let source: u16 = u16::from(val) << 8;
                 let target: u16 = 0xFE00;
                 for i in 0..160 {

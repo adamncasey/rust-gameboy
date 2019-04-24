@@ -7,11 +7,11 @@ use crate::rom::Rom;
 
 pub struct GameBoy {
     title: String,
-    cpu: Cpu,
-    gpu: Gpu,
-    mem: Memory,
+    pub cpu: Cpu,
+    pub gpu: Gpu,
+    pub mem: Memory,
 
-    steps: u64,
+    pub steps: u64,
 }
 
 impl GameBoy {
@@ -19,7 +19,7 @@ impl GameBoy {
         let cartridge: Rom = Rom::load(rom_contents);
 
         if cartridge.rom_type != 0 {
-            println!("ROM type unsupported {}", cartridge.rom_type);
+            //println!("ROM type unsupported {}", cartridge.rom_type);
         }
 
         GameBoy {
@@ -46,7 +46,8 @@ impl GameBoy {
                 self.gpu.mode_elapsed,
                 self.gpu.line,
                 self.mem.get(0xFF41),
-                self.mem.get(0xFF40)
+                self.mem.get(0xFF40),
+                
             );
         }
 

@@ -123,7 +123,6 @@ impl Gpu {
                         self.debug_last_frame = self.debug_current_frame.clone();
                         self.debug_current_frame = GpuDebugTrace::new();
                         // Blank screen for re-writing
-                        self.screen_rgba.resize(0, 255);
                         self.screen_rgba.resize(GB_VSIZE * GB_HSIZE * 4, 255);
                         self.mode = GpuMode::OAMRead;
                         self.line = 0;
@@ -132,7 +131,7 @@ impl Gpu {
             }
         };
 
-        //println!("GPU State: {:?} {:?} {:?}", self.mode, self.line, self.mode_elapsed);
+        ////println!("GPU State: {:?} {:?} {:?}", self.mode, self.line, self.mode_elapsed);
 
         mem.set(0xFF44, self.line);
 
@@ -154,7 +153,7 @@ impl Gpu {
         }
 
         if self.lcd_status_interrupt(mem, newlcdstat, newmode, newline) {
-            println!("lcd_status_interrupt");
+            //println!("lcd_status_interrupt");
             interrupt::set_interrupt(interrupt::Interrupt::LcdStat, mem);
         }
     }
@@ -220,7 +219,7 @@ impl Gpu {
                 &mut self.debug_current_frame,
             );
         } else {
-            //println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
+            ////println!("Sprites disabled {:X} {}", lcdc, lcdc & SPRITE_DISP_BIT);
         }
     }
 }
@@ -239,7 +238,7 @@ fn draw_background(
     let vtile = bgy / 8;
 
     if vtile >= 32 {
-        println!("reached vend of tile {} {}", vtile, line);
+        //println!("reached vend of tile {} {}", vtile, line);
         return;
     }
 
@@ -251,7 +250,7 @@ fn draw_background(
         let bgx = ((i as u16) + u16::from(scx)) % 256;
         let htile = bgx / 8;
         if htile >= 32 {
-            println!("reached hend of tile {} {} {}", htile, line, i);
+            //println!("reached hend of tile {} {} {}", htile, line, i);
             return;
         }
 
@@ -297,7 +296,7 @@ fn draw_sprites(
         let s = load_sprite(mem, i, palettes);
 
         if !sprite_in_row(line, s.y, sprite_height) || !sprite_on_disp(s.x) {
-            //println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
+            ////println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
             continue;
         }
 
@@ -315,7 +314,7 @@ fn draw_sprites(
         for px in 0..8 {
             let x = s.x + px;
             if x < 0 || x > GB_HSIZE as i16 {
-                //println!("Skipping sprite x {} {}", x, tx);
+                ////println!("Skipping sprite x {} {}", x, tx);
                 continue;
             }
             drawn = true;
@@ -323,7 +322,7 @@ fn draw_sprites(
 
             // Is priority bit set or is the bg value zero?
             if !s.priority && rgba[rgba_start] != bgcolouroverdraw {
-                //println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
+                ////println!("Not drawing pixel due to priority / bg colour {}", rgba[rgba_start]);
                 continue;
             }
             // draw pixel
@@ -341,10 +340,10 @@ fn draw_sprites(
 
             // Is this pixel transparent?
             if colour != 0 {
-                //println!("Drawn pixel {:X} {}", rgba_start, pixel);
+                ////println!("Drawn pixel {:X} {}", rgba_start, pixel);
                 set_pixel(rgba, rgba_start, pixel);
             } else {
-                //println!("Skipped pixel {}", colour);
+                ////println!("Skipped pixel {}", colour);
             }
         }
         if drawn {
@@ -481,6 +480,6 @@ mod tests {
         assert_eq!(true, sprite_in_row(0, -8, 16));
         assert_eq!(false, sprite_in_row(0, -8, 8));
 
-        assert_eq!(false, sprite_in_row(0, 65535, 8));
+        assert_eq!(false, sprite_in_row(0, (65535 as i32) as i16, 8));
     }
 }
