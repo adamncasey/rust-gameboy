@@ -2,16 +2,210 @@
 <html>
 
 <head>
-  <meta charset="utf-8">
-  <title>wasm-gameboy</title>
-</head>
+    <meta charset="utf-8">
+    <title>wasm-gameboy</title>
+    <style type="text/css">
+        body {
+            background-color: grey;
+            font-family: sans-serif;
+        }
 
+        main {
+            margin-left: auto;
+            margin-right: auto;
+            width: 50em;
+        }
+
+        canvas#gameboy-canvas {
+            width: 20em;
+            height: 20em;
+            image-rendering: pixelated;
+        }
+
+        section#gameboy {
+            background-color: white;
+            text-align: center;
+            padding-bottom: 1em;
+        }
+
+        section#debug-view {
+            background-color: lightgrey;
+            padding: 0.5em;
+            display: none;
+        }
+
+        div#run-controls {
+            height: 1.5em;
+            line-height: 1.5em;
+            vertical-align: middle;
+            background-color: white;
+            display: inline-block;
+            border-radius: 0.5em;
+            width: 8em;
+            text-align: center;
+
+            padding: 0.25em;
+        }
+
+        div#debug-info {
+            line-height: 0.5em;
+        }
+
+        div#debug-toggle {
+            background-color: lightgrey;
+            height: 2em;
+            border-bottom-left-radius: 1em;
+            border-bottom-right-radius: 1em;
+            text-align: center;
+            vertical-align: top;
+            line-height: 2em;
+            cursor: pointer;
+        }
+
+        span.hex-16,
+        span.hex-8 {
+            font-family: monospace;
+            background-color: lightgrey;
+            height: 1.5em;
+            border-radius: 0.2em;
+            font-size: 1.2em;
+        }
+
+        span.hex-16 {
+            width: 3em;
+            overflow: hidden;
+        }
+
+        span.hex-8 {
+            width: 2em;
+            overflow: hidden;
+        }
+
+        span.dbg-monitor {
+            display: inline-block;
+            background-color: white;
+            border-radius: 0.5em;
+            height: 1.5em;
+            padding: 0.25em;
+            text-align: center;
+        }
+
+        span.dbg-lbl {
+            font-size: 0.6em;
+            display: block;
+            margin-top: -0.25em;
+        }
+
+        span.dbg-16 {
+            width: 2.5em;
+        }
+
+        span.dbg-8 {
+            width: 1em;
+        }
+
+        section#top {
+            display: grid;
+            grid-template-columns: auto auto;
+            grid-gap: 1em;
+        }
+
+        div#load-cartridge {
+            height: 3em;
+            background-color: lightseagreen;
+            width: 75%;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 3em;
+            vertical-align: middle;
+        }
+
+        span#debug-toggle-off {
+            display: none;
+        }
+    </style>
+</head>
 <body>
-  <input type="file" id="insert-cartridge" name="cartridge" />
-  <canvas id="gameboy-canvas"></canvas>
-  <script src="./bootstrap.js"></script>
-  <span><span id="fps"></span> Hz</span>
-  Debug: <input id="debug" type="checkbox" />
+    <main>
+        <section id="gameboy">
+            <canvas id="gameboy-canvas"></canvas> <br />
+            <div id="load-cartridge">
+                <label for="insert-cartridge">Insert Cartridge: </label><input type="file" id="insert-cartridge" name="cartridge" />
+            </div>
+        </section>
+        <section id="debug-view">
+            <span id="fps">0 Hz</span>
+            <section id="top">
+                <div id="run-controls">
+                    <span id="play">Play</span>
+                    <span id="pause">Pause</span>
+                    <span id="step">Step</span>
+                </div>
+                <div id="debug-info">
+                    <span class="dbg-monitor dbg-16">
+                        <span class="dbg-lbl">PC</span><br />
+                        <span class="hex-16" id="cpu-pc">FFFF</span>
+                    </span>
+                    <span class="dbg-monitor dbg-16">
+                        <span class="dbg-lbl">SP</span><br />
+                        <span class="hex-16" id="cpu-sp">FFFF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">A</span><br />
+                        <span class="hex-8" id="cpu-a">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">B</span><br />
+                        <span class="hex-8" id="cpu-b">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">C</span><br />
+                        <span class="hex-8" id="cpu-c">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">D</span><br />
+                        <span class="hex-8" id="cpu-d">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">E</span><br />
+                        <span class="hex-8" id="cpu-e">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">F</span><br />
+                        <span class="hex-8" id="cpu-f">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">H</span><br />
+                        <span class="hex-8" id="cpu-h">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">L</span><br />
+                        <span class="hex-8" id="cpu-l">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">LCD</span><br />
+                        <span class="hex-8" id="gpu-pwr">1</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">STAT</span><br />
+                        <span class="hex-8" id="gpu-stat">FF</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">LY</span><br />
+                        <span class="hex-8" id="gpu-stat">50</span>
+                    </span>
+                    <span class="dbg-monitor">
+                        <span class="dbg-lbl">LCDC</span><br />
+                        <span class="hex-8" id="gpu-lcdc">FF</span>
+                    </span>
+                </div>
+            </section>
+            <div id="disassembly"></div>
+        </section>
+        <div id="debug-toggle"><span id="debug-toggle-on">⇓ Enable Debugging ⇓</span><span id="debug-toggle-off">⇑ Disable Debugging ⇑</span></div>
+    </main>
+
+    <script src="./bootstrap.js"></script>
 </body>
 
 </html>

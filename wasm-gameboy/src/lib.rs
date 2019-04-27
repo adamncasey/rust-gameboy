@@ -34,6 +34,24 @@ pub struct WasmGameboy {
 }
 
 #[wasm_bindgen]
+pub struct GameboyDebugInfo {
+    pub pc: u16,
+    pub sp: u16,
+    pub a: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+    pub f: u8,
+    pub h: u8,
+    pub l: u8,
+    pub lcd_pwr: bool,
+    pub stat: u8,
+    pub ly: u8,
+    pub lcdc: u8
+}
+
+#[wasm_bindgen]
 impl WasmGameboy {
     pub fn new(rom_size: usize) -> WasmGameboy {
         utils::set_panic_hook();
@@ -81,6 +99,30 @@ impl WasmGameboy {
             consolelog!("Gameboy null");
         }
         false
+    }
+
+    pub fn debug_info(&self) -> GameboyDebugInfo {
+        if let Some(gb) = self.gb.as_ref() {
+            GameboyDebugInfo {
+                pc: gb.cpu.pc,
+                sp: gb.cpu.sp,
+                a: gb.cpu.a,
+                b: gb.cpu.b,
+                c: gb.cpu.c,
+                d: gb.cpu.d,
+                e: gb.cpu.e,
+                f: gb.cpu.f,
+                h: gb.cpu.h,
+                l: gb.cpu.l,
+                lcd_pwr: gb.gpu.debug_lcd_pwr,
+                ly: gb.gpu.line,
+                stat: gb.mem.get(0xFF41),
+                lcdc: gb.mem.get(0xFF40),
+            }
+        }
+        else {
+            panic!("gb is null");
+        }
     }
 
     pub fn rom_buffer(&mut self) -> *mut u8 {

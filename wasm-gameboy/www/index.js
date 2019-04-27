@@ -1,15 +1,15 @@
 import { WasmGameboy } from "wasm-gameboy";
 import { memory } from "wasm-gameboy/wasm_gameboy_bg";
 
-let frame_count = 0;
-
 let gb = undefined;
+let ctx = undefined;
+
+let debug_state = { "enabled": false, "stopping": false, "stop_handler": () => { } };
 
 const initialiseGameboy = (rom) => {
     const canvas = document.getElementById("gameboy-canvas");
 
     gb = WasmGameboy.new(rom.byteLength);
-    gb.debug(document.getElementById("debug").checked);
 
     const cartridgeData = new Uint8Array(rom, 0, rom.byteLength);
 
@@ -23,22 +23,10 @@ const initialiseGameboy = (rom) => {
     canvas.height = gb.screen_height();
     canvas.width = gb.screen_width();
 
-    const ctx = canvas.getContext('2d');
+    ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
 
-    const renderLoop = () => {
-        let render = gb.cycle_until_vsync();
-
-        if (render) {
-            frame_count += 1;
-
-            renderScreen(gb, ctx);
-            fps.render(1);
-        }
-
-        requestAnimationFrame(renderLoop);
-    };
-
-    requestAnimationFrame(renderLoop);
+    requestAnimationFrame(normalPlayLoop);
 };
 
 const renderScreen = (gb, ctx) => {
@@ -46,6 +34,48 @@ const renderScreen = (gb, ctx) => {
     const screenData = new Uint8ClampedArray(memory.buffer, screenPtr, gb.screen_size());
     const image = new ImageData(screenData, gb.screen_width(), gb.screen_height());
     ctx.putImageData(image, 0, 0);
+}
+
+const normalPlayLoop = () => {
+    let render = gb.cycle_until_vsync();
+
+    if (render) {
+        renderScreen(gb, ctx);
+        fps.render(1);
+    }
+
+    if (debug_state.stopping === false) {
+        requestAnimationFrame(normalPlayLoop);
+    } else {
+        debug_state.stop_handler();
+    }
+}
+
+const singleStep = () => {
+    let render = false; // gb.cycle
+
+    if (render) {
+        renderScreen(gb, ctx);
+        fps.render(1);
+    }
+}
+
+function updateDebugInfo() {
+    if (gb) {
+        let info = gb.debug_info();
+        console.log(info);
+
+        document.getElementById("cpu-pc").innerText = info.pc;
+        document.getElementById("cpu-sp").innerText = info.sp;
+        document.getElementById("cpu-a").innerText = info.a;
+        document.getElementById("cpu-b").innerText = info.b;
+        document.getElementById("cpu-c").innerText = info.c;
+        document.getElementById("cpu-d").innerText = info.d;
+        document.getElementById("cpu-e").innerText = info.e;
+        document.getElementById("cpu-f").innerText = info.f;
+        document.getElementById("cpu-h").innerText = info.h;
+        document.getElementById("cpu-l").innerText = info.l;
+    }
 }
 
 document.getElementById("insert-cartridge").addEventListener('change', (evt) => {
@@ -84,27 +114,36 @@ const fps = new class {
         // Find the max, min, and mean of our 100 latest timings.
         let min = Infinity;
         let max = -Infinity;
-        let sum = 0;
         for (let i = 0; i < this.frames.length; i++) {
-            sum += this.frames[i];
             min = Math.min(this.frames[i], min);
             max = Math.max(this.frames[i], max);
         }
-        let mean = sum / this.frames.length;
 
         // Render the statistics.
-        this.fps.textContent = `
-  CPU Emulation Hz:
-           latest = ${Math.round(fps)}
-  avg of last 100 = ${Math.round(mean)}
-  min of last 100 = ${Math.round(min)}
-  max of last 100 = ${Math.round(max)}
-  `.trim();
+        this.fps.textContent = `${Math.round(min)}~${Math.round(max)} Hz`.trim();
     }
 };
 
-document.getElementById("debug").addEventListener("change", function (evt) {
-    if (gb) {
-        gb.debug(document.getElementById("debug").checked);
+document.getElementById("debug-toggle").addEventListener("click", function (evt) {
+    let hide = document.getElementById("debug-toggle-off");
+    let show = document.getElementById("debug-toggle-on");
+    let debug_panel = document.getElementById("debug-view");
+
+    if (hide.style.display == "none") {
+        hide.style.display = "inline-block";
+        show.style.display = "none";
+        debug_panel.style.display = "block";
+        debug_state.enabled = true;
+    }
+    else {
+        hide.style.display = "none";
+        show.style.display = "inline-block";
+        debug_panel.style.display = "none";
+        debug_state.enabled = false;
     }
 });
+
+
+document.getElementById("pause").addEventListener("click", function(evt) {
+    updateDebugInfo();
+})

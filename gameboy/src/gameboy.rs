@@ -47,7 +47,6 @@ impl GameBoy {
                 self.gpu.line,
                 self.mem.get(0xFF41),
                 self.mem.get(0xFF40),
-                
             );
         }
 
