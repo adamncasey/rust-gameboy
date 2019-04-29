@@ -31,6 +31,8 @@ pub struct WasmGameboy {
     gb: Option<GameBoy>,
     rom_buffer: Vec<u8>,
     debug: bool,
+
+    latest_disassembly: Vec<char>
 }
 
 #[wasm_bindgen]
@@ -48,7 +50,7 @@ pub struct GameboyDebugInfo {
     pub lcd_pwr: bool,
     pub stat: u8,
     pub ly: u8,
-    pub lcdc: u8
+    pub lcdc: u8,
 }
 
 #[wasm_bindgen]
@@ -59,6 +61,7 @@ impl WasmGameboy {
             gb: None,
             rom_buffer: vec![0; rom_size],
             debug: false,
+            latest_disassembly: Vec::new()
         }
     }
 
@@ -73,24 +76,6 @@ impl WasmGameboy {
     pub fn cycle_until_vsync(&mut self) -> bool {
         if let Some(gb) = self.gb.as_mut() {
             for _ in 0..100_000 {
-                if self.debug {
-                    consolelog!(
-                        "State after {} total steps {} | Gpu PWR {} mode: {:?} elapsed {} ly {} stat {:X} lcdc {:X}",
-                        gb.steps,
-                        gb.cpu.print_state(),
-                        gb.gpu.debug_lcd_pwr,
-                        gb.gpu.mode,
-                        gb.gpu.mode_elapsed,
-                        gb.gpu.line,
-                        gb.mem.get(0xFF41),
-                        gb.mem.get(0xFF40)
-                    );
-
-                    let instrs = Instruction::disassemble(&gb.mem, gb.cpu.pc, 5);
-
-                    consolelog!("--- Disassembly at PC {:4X} {:?}", gb.cpu.pc, instrs);
-                }
-
                 if gb.cycle(false, None) {
                     return true;
                 }
@@ -99,6 +84,30 @@ impl WasmGameboy {
             consolelog!("Gameboy null");
         }
         false
+    }
+
+    pub fn cycle(&mut self) -> bool {
+        if let Some(gb) = self.gb.as_mut() {
+            if gb.cycle(false, None) {
+                return true;
+            }
+        } else {
+            consolelog!("Gameboy null");
+        }
+        false
+    }
+
+    /// Decodes the given memory range into an internal buffer, returning a
+    /// pointer to this buffer. Each row in the buffer is 100bytes long,
+    /// containing a description of the instruction contained at that address
+    /// 
+    /// Returned pointer is valid until the next `decode_memory` call
+    pub fn decode_memory(&mut self, start: u16, end: u16) -> *const char {
+        let len = usize::from(end - start);
+
+        self.latest_disassembly = vec![' '; len];
+
+        self.latest_disassembly.as_ptr()
     }
 
     pub fn debug_info(&self) -> GameboyDebugInfo {
@@ -119,8 +128,7 @@ impl WasmGameboy {
                 stat: gb.mem.get(0xFF41),
                 lcdc: gb.mem.get(0xFF40),
             }
-        }
-        else {
+        } else {
             panic!("gb is null");
         }
     }

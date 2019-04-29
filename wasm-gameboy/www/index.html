@@ -41,7 +41,6 @@
             background-color: white;
             display: inline-block;
             border-radius: 0.5em;
-            width: 8em;
             text-align: center;
 
             padding: 0.25em;
@@ -123,6 +122,11 @@
         span#debug-toggle-off {
             display: none;
         }
+
+        div#disassembly {
+            overflow-y: scroll;
+            min-height: 10em;
+        }
     </style>
 </head>
 <body>
@@ -137,9 +141,9 @@
             <span id="fps">0 Hz</span>
             <section id="top">
                 <div id="run-controls">
-                    <span id="play">Play</span>
-                    <span id="pause">Pause</span>
-                    <span id="step">Step</span>
+                    <button id="play">Play</span>
+                    <button id="pause">Pause</span>
+                    <button id="step">Step</span>
                 </div>
                 <div id="debug-info">
                     <span class="dbg-monitor dbg-16">

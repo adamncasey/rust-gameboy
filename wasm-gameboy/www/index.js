@@ -4,7 +4,7 @@ import { memory } from "wasm-gameboy/wasm_gameboy_bg";
 let gb = undefined;
 let ctx = undefined;
 
-let debug_state = { "enabled": false, "stopping": false, "stop_handler": () => { } };
+let debug_state = { "enabled": false, "stopping": false, "stopped": true, "stop_handler": () => { } };
 
 const initialiseGameboy = (rom) => {
     const canvas = document.getElementById("gameboy-canvas");
@@ -26,7 +26,7 @@ const initialiseGameboy = (rom) => {
     ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    requestAnimationFrame(normalPlayLoop);
+    startPlayLoop();
 };
 
 const renderScreen = (gb, ctx) => {
@@ -34,6 +34,14 @@ const renderScreen = (gb, ctx) => {
     const screenData = new Uint8ClampedArray(memory.buffer, screenPtr, gb.screen_size());
     const image = new ImageData(screenData, gb.screen_width(), gb.screen_height());
     ctx.putImageData(image, 0, 0);
+}
+
+const startPlayLoop = () => {
+    debug_state.stopped = false;
+    debug_state.stopping = false;
+    updateDebugRunControls();
+
+    requestAnimationFrame(normalPlayLoop);
 }
 
 const normalPlayLoop = () => {
@@ -47,12 +55,14 @@ const normalPlayLoop = () => {
     if (debug_state.stopping === false) {
         requestAnimationFrame(normalPlayLoop);
     } else {
+        debug_state.stopped = true;
+        debug_state.stopping = false;
         debug_state.stop_handler();
     }
 }
 
 const singleStep = () => {
-    let render = false; // gb.cycle
+    let render = gb.cycle();
 
     if (render) {
         renderScreen(gb, ctx);
@@ -124,6 +134,18 @@ const fps = new class {
     }
 };
 
+const updateDebugRunControls = () => {
+    if(debug_state.stopped) {
+        document.getElementById("pause").disabled = true;
+        document.getElementById("play").disabled = false;
+        document.getElementById("step").disabled = false;
+    } else {
+        document.getElementById("pause").disabled = false;
+        document.getElementById("play").disabled = true;
+        document.getElementById("step").disabled = true;
+    }
+};
+
 document.getElementById("debug-toggle").addEventListener("click", function (evt) {
     let hide = document.getElementById("debug-toggle-off");
     let show = document.getElementById("debug-toggle-on");
@@ -144,6 +166,23 @@ document.getElementById("debug-toggle").addEventListener("click", function (evt)
 });
 
 
-document.getElementById("pause").addEventListener("click", function(evt) {
-    updateDebugInfo();
-})
+document.getElementById("pause").addEventListener("click", function (evt) {
+    debug_state.stop_handler = () => {
+        updateDebugInfo();
+        updateDebugRunControls();
+    };
+    debug_state.stopping = true;
+});
+
+document.getElementById("step").addEventListener("click", function (evt) {
+    if (gb && debug_state.stopped === true) {
+        singleStep();
+        updateDebugInfo();
+    }
+});
+
+document.getElementById("play").addEventListener("click", function (evt) {
+    if (gb && debug_state.stopped === true) {
+        startPlayLoop();
+    }
+});
