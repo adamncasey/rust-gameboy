@@ -1,5 +1,5 @@
 [package]
-name = "sfml-gameboy"
+name = "native-gameboy"
 version = "0.1.0"
 authors = ["Adam Casey <adamncasey@gmail.com>"]
 edition = "2018"
@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 gameboy = { path = "../gameboy" }
 
-sfml = "*"
+minifb = "0.19.3"
 clap = "*"
 
 [profile.release]

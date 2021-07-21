@@ -9,3 +9,4 @@ mod memory;
 mod opcode;
 mod rom;
 mod timer;
+pub mod disassemble;

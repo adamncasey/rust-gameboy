@@ -1,8 +1,10 @@
 mod utils;
 
+use std::mem;
+
+use gameboy::disassemble::{disassemble, Disassembly};
 use gameboy::gameboy::GameBoy;
 use gameboy::gpu::{GB_HSIZE, GB_VSIZE};
-use gameboy::instruction::Instruction;
 
 use wasm_bindgen::prelude::*;
 
@@ -22,17 +24,12 @@ macro_rules! consolelog {
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern "C" {
-    fn alert(s: &str);
-}
-
-#[wasm_bindgen]
 pub struct WasmGameboy {
     gb: Option<GameBoy>,
     rom_buffer: Vec<u8>,
     debug: bool,
 
-    latest_disassembly: Vec<char>
+    last_disassembly: Vec<Disassembly>,
 }
 
 #[wasm_bindgen]
@@ -61,7 +58,7 @@ impl WasmGameboy {
             gb: None,
             rom_buffer: vec![0; rom_size],
             debug: false,
-            latest_disassembly: Vec::new()
+            last_disassembly: Vec::new(),
         }
     }
 
@@ -97,17 +94,29 @@ impl WasmGameboy {
         false
     }
 
-    /// Decodes the given memory range into an internal buffer, returning a
-    /// pointer to this buffer. Each row in the buffer is 100bytes long,
-    /// containing a description of the instruction contained at that address
-    /// 
-    /// Returned pointer is valid until the next `decode_memory` call
-    pub fn decode_memory(&mut self, start: u16, end: u16) -> *const char {
-        let len = usize::from(end - start);
+    /// Populates an internal buffer with the decoding of the memory address
+    /// range [start..end]. Returns the decoded instruction info
+    pub fn disassemble(&mut self, start: u16, end: u16) -> JsValue {
+        if let Some(gb) = self.gb.as_mut() {
+            self.last_disassembly = disassemble(start, end, &gb.mem);
 
-        self.latest_disassembly = vec![' '; len];
+            consolelog!("{:?}", self.last_disassembly);
 
-        self.latest_disassembly.as_ptr()
+            JsValue::from_serde(&self.last_disassembly).unwrap()
+        } else {
+            panic!("Gameboy null");
+        }
+    }
+
+    /// Returns a pointer to the internal buffer storing the results
+    /// from the last disassembly. Pointer is valid until the next call to
+    /// `disassemble`
+    pub fn last_disassembly(&self) -> *const Disassembly {
+        self.last_disassembly.as_ptr()
+    }
+
+    pub fn disassembly_row_size(&self) -> usize {
+        mem::size_of::<Disassembly>()
     }
 
     pub fn debug_info(&self) -> GameboyDebugInfo {
@@ -151,9 +160,4 @@ impl WasmGameboy {
     pub fn screen_height(&self) -> usize {
         GB_VSIZE
     }
-}
-
-#[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, wasm-game-of-life 2!");
 }

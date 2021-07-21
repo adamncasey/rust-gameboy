@@ -248,11 +248,11 @@ pub fn daa(cpu: &mut Cpu) {
         carry = true;
     }
 
-    if n_flag {
-        cpu.a.wrapping_sub(adjust);
+    cpu.a = if n_flag {
+        cpu.a.wrapping_sub(adjust)
     } else {
-        cpu.a.wrapping_add(adjust);
-    }
+        cpu.a.wrapping_add(adjust)
+    };
 
     cpu.set_flags(cpu.a == 0, n_flag, false, carry);
 }

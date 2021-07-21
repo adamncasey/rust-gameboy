@@ -2,8 +2,6 @@ use crate::input::Input;
 use crate::interrupt::{set_interrupt, Interrupt};
 use crate::timer::Timer;
 
-use std::{str, vec};
-
 pub struct Memory {
     cartridge: Vec<u8>,
     vram: Vec<u8>,
@@ -20,7 +18,7 @@ pub struct Memory {
     input: Input,
     timer: Timer,
 
-    serial_buf: Vec<u8>
+    serial_buf: Vec<u8>,
 }
 
 const VRAM_SIZE: usize = 8 * 1024;
@@ -46,7 +44,7 @@ impl Memory {
             input: Input::new(),
             timer: Timer::new(),
 
-            serial_buf: Vec::new()
+            serial_buf: Vec::new(),
         };
 
         mem.set(0xFF40, 0x91);
@@ -60,7 +58,7 @@ impl Memory {
     pub fn get(&self, addr: u16) -> u8 {
         match addr {
             0xFF00 => self.input.value(),
-            0xFF04...0xFF07 => self.timer.read(addr),
+            0xFF04..=0xFF07 => self.timer.read(addr),
             _ => *self.mmu(addr),
         }
     }
@@ -88,31 +86,31 @@ impl Memory {
 
     fn mmu_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
-            0x0000...0x7FFF => &mut self.unused,
-            0x8000...0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
-            0xA000...0xBFFF => &mut self.eram[(addr - 0xA000) as usize],
-            0xC000...0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
-            0xE000...0xFDFF => &mut self.ram[(addr - 0xE000) as usize],
-            0xFE00...0xFE9F => &mut self.sprite[(addr - 0xFE00) as usize],
-            0xFEA0...0xFEFF => &mut self.unused,
-            0xFF00...0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
-            0xFF4C...0xFF7F => &mut self.unused,
-            0xFF80...0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
+            0x0000..=0x7FFF => &mut self.unused,
+            0x8000..=0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
+            0xA000..=0xBFFF => &mut self.eram[(addr - 0xA000) as usize],
+            0xC000..=0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
+            0xE000..=0xFDFF => &mut self.ram[(addr - 0xE000) as usize],
+            0xFE00..=0xFE9F => &mut self.sprite[(addr - 0xFE00) as usize],
+            0xFEA0..=0xFEFF => &mut self.unused,
+            0xFF00..=0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
+            0xFF4C..=0xFF7F => &mut self.unused,
+            0xFF80..=0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
         }
     }
 
     fn mmu(&self, addr: u16) -> &u8 {
         match addr {
-            0x0000...0x7FFF => &self.cartridge[addr as usize],
-            0x8000...0x9FFF => &self.vram[(addr - 0x8000) as usize],
-            0xA000...0xBFFF => &self.eram[(addr - 0xA000) as usize],
-            0xC000...0xDFFF => &self.ram[(addr - 0xC000) as usize],
-            0xE000...0xFDFF => &self.ram[(addr - 0xE000) as usize],
-            0xFE00...0xFE9F => &self.sprite[(addr - 0xFE00) as usize],
-            0xFEA0...0xFEFF => &self.unused,
-            0xFF00...0xFF4B => &self.io[(addr - 0xFF00) as usize],
-            0xFF4C...0xFF7F => &self.unused,
-            0xFF80...0xFFFF => &self.highram[(addr - 0xFF80) as usize],
+            0x0000..=0x7FFF => &self.cartridge[addr as usize],
+            0x8000..=0x9FFF => &self.vram[(addr - 0x8000) as usize],
+            0xA000..=0xBFFF => &self.eram[(addr - 0xA000) as usize],
+            0xC000..=0xDFFF => &self.ram[(addr - 0xC000) as usize],
+            0xE000..=0xFDFF => &self.ram[(addr - 0xE000) as usize],
+            0xFE00..=0xFE9F => &self.sprite[(addr - 0xFE00) as usize],
+            0xFEA0..=0xFEFF => &self.unused,
+            0xFF00..=0xFF4B => &self.io[(addr - 0xFF00) as usize],
+            0xFF4C..=0xFF7F => &self.unused,
+            0xFF80..=0xFFFF => &self.highram[(addr - 0xFF80) as usize],
         }
     }
 
@@ -122,17 +120,14 @@ impl Memory {
                 self.input.update(val);
             }
             0xFF01 => {
-                self.serial_buf.push(val);
-                ////println!("-- {}", str::from_utf8(&self.serial_buf).unwrap());
+                //self.serial_buf.push(val);
             }
-            0xFF04...0xFF07 => {
-                ////println!("Wrote to timer address {:x} {:x}", addr, val);
+            0xFF04..=0xFF07 => {
                 self.timer.write(addr, val);
             }
             0xFF46 => {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
-                ////println!("DMA from {:x}", source);
                 let source: u16 = u16::from(val) << 8;
                 let target: u16 = 0xFE00;
                 for i in 0..160 {
@@ -152,5 +147,17 @@ impl Memory {
         if self.timer.tick(cycles) {
             set_interrupt(Interrupt::Timer, self);
         }
+    }
+
+    pub fn clone_bytes(&self, start: u16, len: u16) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(usize::from(len));
+
+        let mut addr = start;
+        for _ in 0..len {
+            bytes.push(self.get(addr));
+            addr += 1;
+        }
+
+        bytes
     }
 }

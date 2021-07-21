@@ -60,18 +60,12 @@ impl Cpu {
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory, debug: bool) -> u8 {
+    pub fn cycle(&mut self, mem: &mut Memory, _: bool) -> u8 {
         if self.halted {
             return 8;
         }
 
         let instr = Instruction::read(&mem, self.pc);
-
-        if debug {
-            let instrs = Instruction::disassemble(mem, self.pc, 5);
-
-            //println!("--- Disassembly at PC {:4X} {:?}", self.pc, instrs);
-        }
 
         let cycles = instr.execute(self, mem);
 
@@ -100,15 +94,12 @@ impl Cpu {
             }
             interrupt::Interrupt::LcdStat => {
                 targetpc = 0x0048;
-                //println!("LcdStat interrupted triggered");
             }
             interrupt::Interrupt::Timer => {
                 targetpc = 0x0050;
-                //println!("Timer interrupted triggered");
             }
             interrupt::Interrupt::Joypad => {
                 targetpc = 0x0060;
-                //println!("Joypad interrupted triggered");
             }
         };
 
@@ -242,12 +233,10 @@ impl Cpu {
 
     pub fn enable_interrupts(&mut self) {
         self.interrupts = true;
-        ////println!("Interrupts enabled");
     }
 
     pub fn disable_interrupts(&mut self) {
         self.interrupts = false;
-        ////println!("Interrupts disabled");
     }
 
     pub fn halt(&mut self) {

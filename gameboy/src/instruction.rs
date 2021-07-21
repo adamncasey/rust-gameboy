@@ -262,6 +262,7 @@ pub enum Instruction {
     HALT,
 
     ILLEGAL,
+    UNIMPLEMENTED,
 }
 
 impl Instruction {
@@ -401,7 +402,8 @@ impl Instruction {
             Instruction::DAA => 1,
             Instruction::HALT => 1,
 
-            Instruction::ILLEGAL => panic!("Illegal instruction"),
+            Instruction::ILLEGAL => 1,
+            Instruction::UNIMPLEMENTED => 1,
         }
     }
 
@@ -411,6 +413,7 @@ impl Instruction {
         match *self {
             Instruction::Noop => cycles = 4,
             Instruction::ILLEGAL => panic!("Illegal instruction"),
+            Instruction::UNIMPLEMENTED => panic!("Unimplemented instruction"),
             Instruction::LDI16 { val, reg } => {
                 cpu.set16(reg, val);
                 cycles = 12;
@@ -727,7 +730,8 @@ impl Instruction {
                 cycles = 16;
             }
             Instruction::ADC { reg } => {
-                let val: u8 = cpu.get(reg) + cpu.c_flag() as u8;
+                // TODO Carry flag interaction?
+                let val: u8 = cpu.get(reg).wrapping_add(cpu.c_flag() as u8);
                 math::add(cpu, val);
                 cycles = 4;
             }

@@ -6,3 +6,6 @@ edition = "2018"
 
 [profile.release]
 debug = true
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }

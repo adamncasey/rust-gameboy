@@ -96,7 +96,7 @@ impl Timer {
         }
 
         if self.baseclock_count % 16 == 0 {
-            self.divider.wrapping_add(1);
+            self.divider = self.divider.wrapping_add(1);
         }
 
         // TODO Turn speed into an enum?
@@ -111,7 +111,7 @@ impl Timer {
         let mut interrupt = false;
         if self.baseclock_count % ratio == 0 {
             let old_count = self.counter;
-            self.counter.wrapping_add(1);
+            self.counter = self.counter.wrapping_add(1);
 
             if old_count > self.counter {
                 self.counter = self.modulo;

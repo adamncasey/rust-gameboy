@@ -85,7 +85,36 @@ function updateDebugInfo() {
         document.getElementById("cpu-f").innerText = info.f;
         document.getElementById("cpu-h").innerText = info.h;
         document.getElementById("cpu-l").innerText = info.l;
+
+        updateDisassembly(info.pc);
     }
+}
+
+function updateDisassembly(pc) {
+    const disassembly = gb.disassemble(Math.max(pc - 1000, 0), Math.min(pc + 1000, 0xFFFF));
+    console.log({disassembly});
+
+    let table = document.createElement("table");
+
+    for (let instr of disassembly) {
+        let row = document.createElement("tr");
+
+        let addr_td = document.createElement("td");
+        var addr = document.createTextNode(instr.addr);
+        addr_td.appendChild(addr);
+        row.appendChild(addr_td);
+
+        let desc_td = document.createElement("td");
+        var desc = document.createTextNode(instr.desc);
+        desc_td.appendChild(desc);
+        row.appendChild(desc_td);
+
+        table.appendChild(row);
+    }
+
+    let container = document.getElementById("disassembly");
+    container.innerHTML = '';
+    container.appendChild(table);
 }
 
 document.getElementById("insert-cartridge").addEventListener('change', (evt) => {
@@ -135,7 +164,7 @@ const fps = new class {
 };
 
 const updateDebugRunControls = () => {
-    if(debug_state.stopped) {
+    if (debug_state.stopped) {
         document.getElementById("pause").disabled = true;
         document.getElementById("play").disabled = false;
         document.getElementById("step").disabled = false;
