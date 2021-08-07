@@ -57,12 +57,6 @@ pub fn increment16(cpu: &mut Cpu, reg: Cpu16Register) {
     let val: u16 = cpu.get16(reg);
     let newval = val.wrapping_add(1);
     cpu.set16(reg, newval);
-
-    let z = newval == 0;
-    let h = (val & 0xf00) == 0xf00;
-    let c: bool = cpu.c_flag();
-
-    cpu.set_flags(z, false, h, c);
 }
 
 pub fn decrement(cpu: &mut Cpu, val: u8) -> u8 {
@@ -81,12 +75,6 @@ pub fn decrement16(cpu: &mut Cpu, reg: Cpu16Register) {
     let val: u16 = cpu.get16(reg);
     let newval = val.wrapping_sub(1);
     cpu.set16(reg, newval);
-
-    let z = newval == 0;
-    let h = (newval & 0xf00) == 0xf00;
-    let c: bool = cpu.c_flag();
-
-    cpu.set_flags(z, true, h, c);
 }
 
 pub fn complement(cpu: &mut Cpu) {
