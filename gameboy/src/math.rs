@@ -118,7 +118,7 @@ pub fn and(cpu: &mut Cpu, val: u8) {
 
     cpu.a = result;
 
-    cpu.set_flags(result == 0, false, false, false);
+    cpu.set_flags(result == 0, false, true, false);
 }
 
 pub fn compare(cpu: &mut Cpu, val: u8) {
@@ -191,8 +191,8 @@ pub fn rr(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = (cpu.c_flag() as u8) << 7;
     let c: bool = (val & 0b1) != 0;
 
-    let rotated = val.rotate_right(1);
-    let res = rotated | old_c;
+    let shifted = val >> 1;
+    let res = shifted | old_c;
 
     cpu.set_flags(res == 0, false, false, c);
 
@@ -203,13 +203,14 @@ pub fn rl(cpu: &mut Cpu, val: u8) -> u8 {
     let old_c = cpu.c_flag() as u8;
     let c: bool = (val & 0b1000_0000) != 0;
 
-    let rotated = val.rotate_left(1);
-    let res = rotated | old_c;
+    let shifted = val << 1;
+    let res = shifted | old_c;
 
     cpu.set_flags(res == 0, false, false, c);
 
     res
 }
+
 pub fn rrc(cpu: &mut Cpu, val: u8) -> u8 {
     let c: bool = (val & 0b1) != 0;
     let res = val.rotate_right(1);
@@ -305,5 +306,62 @@ mod tests {
 
         let expected_flags = 0b0010_0000;
         assert_eq!(cpu.f, expected_flags);
+    }
+
+    #[test]
+    fn test_rr_empty_carry() {
+        let mut cpu = Cpu::new();
+        cpu.set_flags(false, false, false, false);
+
+        let result = rr(&mut cpu, 1);
+
+        assert_eq!(result, 0);
+        assert!(cpu.z_flag());
+        assert!(!cpu.n_flag());
+        assert!(!cpu.h_flag());
+        assert!(cpu.c_flag());
+    }
+
+    #[test]
+    fn test_rr_with_carry() {
+        let mut cpu = Cpu::new();
+        cpu.set_flags(false, false, false, true);
+
+        let result = rr(&mut cpu, 1);
+
+        assert_eq!(result, 128);
+        assert!(!cpu.z_flag());
+        assert!(!cpu.n_flag());
+        assert!(!cpu.h_flag());
+        assert!(cpu.c_flag());
+    }
+    
+
+    #[test]
+    fn test_rl_empty_carry() {
+        let mut cpu = Cpu::new();
+        cpu.set_flags(false, false, false, false);
+
+        let result = rl(&mut cpu, 128);
+
+        assert_eq!(result, 0);
+        assert!(cpu.z_flag());
+        assert!(!cpu.n_flag());
+        assert!(!cpu.h_flag());
+        assert!(cpu.c_flag());
+    }
+
+    #[test]
+    fn test_rl_with_carry() {
+        let mut cpu = Cpu::new();
+        cpu.set_flags(false, false, false, true);
+
+        let result = rl(&mut cpu, 128);
+
+        assert_eq!(result, 1);
+        assert!(!cpu.z_flag());
+        assert!(!cpu.n_flag());
+        assert!(!cpu.h_flag());
+        assert!(cpu.c_flag());
     }
 }

@@ -691,7 +691,7 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::SBCR { reg } => {
-                let val: u8 = cpu.get(reg) + cpu.c_flag() as u8;
+                let val: u8 = cpu.get(reg).wrapping_add(cpu.c_flag() as u8);
                 math::subtract(cpu, val);
                 cycles = 4;
             }
