@@ -477,9 +477,9 @@ mod tests {
     use super::*;
     #[test]
     fn test_sprite_in_row() {
-        assert_eq!(true, sprite_in_row(0, -8, 16));
-        assert_eq!(false, sprite_in_row(0, -8, 8));
+        assert!(sprite_in_row(0, -8, 16));
+        assert!(!sprite_in_row(0, -8, 8));
 
-        assert_eq!(false, sprite_in_row(0, (65535 as i32) as i16, 8));
+        assert!(!sprite_in_row(0, 32767, 8));
     }
 }
