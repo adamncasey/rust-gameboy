@@ -51,7 +51,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
             reg: CpuRegister::C,
         },
         0x0F => Instruction::RRCA,
-        0x10 => Instruction::UNIMPLEMENTED, // STOP
+        0x10 => Instruction::UNIMPLEMENTED { opcode: 0x10 }, // STOP
         0x11 => Instruction::LDI16 {
             val: mem.get16(argstart),
             reg: Cpu16Register::DE,
@@ -334,7 +334,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         },
         0x66 => Instruction::LDA8 {
             src_addr: Cpu16Register::HL,
-            dst: CpuRegister::E,
+            dst: CpuRegister::H,
         },
         0x67 => Instruction::LDR8 {
             src: CpuRegister::A,

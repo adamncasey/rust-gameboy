@@ -79,7 +79,7 @@ impl Cpu {
         }
 
         if self.pc == 0xC6B8 {
-            println!("Got here");
+            //println!("Got here");
         }
 
         let cycles = instr.execute(self, mem);

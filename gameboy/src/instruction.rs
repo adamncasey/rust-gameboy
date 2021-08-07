@@ -262,7 +262,9 @@ pub enum Instruction {
     HALT,
 
     ILLEGAL,
-    UNIMPLEMENTED,
+    UNIMPLEMENTED {
+        opcode: u8
+    },
 }
 
 impl Instruction {
@@ -402,7 +404,7 @@ impl Instruction {
             Instruction::HALT => 1,
 
             Instruction::ILLEGAL => 1,
-            Instruction::UNIMPLEMENTED => 1,
+            Instruction::UNIMPLEMENTED { .. } => 1,
         }
     }
 
@@ -412,7 +414,7 @@ impl Instruction {
         match *self {
             Instruction::Noop => cycles = 4,
             Instruction::ILLEGAL => panic!("Illegal instruction"),
-            Instruction::UNIMPLEMENTED => panic!("Unimplemented instruction"),
+            Instruction::UNIMPLEMENTED { opcode }=> panic!("Unimplemented opcode 0x{:x}", opcode),
             Instruction::LDI16 { val, reg } => {
                 cpu.set16(reg, val);
                 cycles = 12;
@@ -696,7 +698,7 @@ impl Instruction {
                 cycles = 4;
             }
             Instruction::SBCA { reg_addr } => {
-                let val: u8 = mem.get(cpu.get16(reg_addr)) + cpu.c_flag() as u8;
+                let val: u8 = mem.get(cpu.get16(reg_addr)).wrapping_add(cpu.c_flag() as u8);
                 math::subtract(cpu, val);
                 cycles = 8;
             }
@@ -735,7 +737,7 @@ impl Instruction {
                 cycles = 4;
             }
             Instruction::ADCA => {
-                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)) + cpu.c_flag() as u8;
+                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)).wrapping_add(cpu.c_flag() as u8);
                 math::add(cpu, val);
                 cycles = 8;
             }
@@ -850,14 +852,14 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::PUSH { reg } => {
-                cpu.sp -= 2;
+                cpu.sp = cpu.sp.wrapping_sub(2);
                 mem.set16(cpu.sp, cpu.get16(reg));
                 cycles = 16;
             }
             Instruction::POP { reg } => {
                 let sp = cpu.sp;
                 cpu.set16(reg, mem.get16(sp));
-                cpu.sp += 2;
+                cpu.sp = cpu.sp.wrapping_add(2);
                 cycles = 16;
             }
             Instruction::SWAP { reg } => {
