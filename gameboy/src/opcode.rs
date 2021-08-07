@@ -338,7 +338,7 @@ pub fn read_opcode(opcode: u8, argstart: u16, mem: &Memory) -> Instruction {
         },
         0x67 => Instruction::LDR8 {
             src: CpuRegister::A,
-            dst: CpuRegister::E,
+            dst: CpuRegister::H,
         },
         0x68 => Instruction::LDR8 {
             src: CpuRegister::B,
