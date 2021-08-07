@@ -1,4 +1,5 @@
 mod cpu;
+pub mod disassemble;
 pub mod gameboy;
 pub mod gpu;
 pub mod input;
@@ -9,4 +10,3 @@ mod memory;
 mod opcode;
 mod rom;
 mod timer;
-pub mod disassemble;

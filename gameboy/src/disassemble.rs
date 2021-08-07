@@ -1,14 +1,14 @@
-use crate::memory::Memory;
 use crate::instruction::Instruction;
+use crate::memory::Memory;
 
-use serde::{Serialize};
+use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct Disassembly {
     pub addr: u16,
     pub data_len: u8,
     pub data: Vec<u8>,
-    pub desc: String
+    pub desc: String,
 }
 
 pub fn disassemble(start: u16, end: u16, mem: &Memory) -> Vec<Disassembly> {
@@ -24,7 +24,7 @@ pub fn disassemble(start: u16, end: u16, mem: &Memory) -> Vec<Disassembly> {
             addr: addr,
             data_len: len as u8,
             data: mem.clone_bytes(addr, len),
-            desc: format!("{:?}", instr)
+            desc: format!("{:?}", instr),
         });
 
         addr += len;

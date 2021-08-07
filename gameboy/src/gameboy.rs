@@ -1,4 +1,4 @@
-use crate::cpu::Cpu;
+pub use crate::cpu::Cpu;
 use crate::gpu::{Gpu, GpuDebugTrace};
 use crate::input::Input;
 use crate::interrupt;
@@ -47,6 +47,13 @@ impl GameBoy {
                 self.gpu.line,
                 self.mem.get(0xFF41),
                 self.mem.get(0xFF40),
+            );
+            println!(
+                "Cpu Flags: Z{} N{} H{} C{}",
+                self.cpu.z_flag(),
+                self.cpu.n_flag(),
+                self.cpu.h_flag(),
+                self.cpu.c_flag()
             );
         }
 

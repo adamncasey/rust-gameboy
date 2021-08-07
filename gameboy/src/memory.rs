@@ -120,7 +120,12 @@ impl Memory {
                 self.input.update(val);
             }
             0xFF01 => {
-                //self.serial_buf.push(val);
+                self.serial_buf.push(val);
+
+                if val as char == '\n' {
+                    println!("{}", String::from_utf8_lossy(&self.serial_buf));
+                    self.serial_buf.clear();
+                }
             }
             0xFF04..=0xFF07 => {
                 self.timer.write(addr, val);

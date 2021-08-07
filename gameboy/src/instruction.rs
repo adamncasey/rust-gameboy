@@ -276,8 +276,7 @@ impl Instruction {
         read_opcode(opcode, addr + 1, mem)
     }
 
-    pub fn disassemble(mem: &Memory, start_addr: u16, num_instrs: usize) -> Vec<Instruction>
-    {
+    pub fn disassemble(mem: &Memory, start_addr: u16, num_instrs: usize) -> Vec<Instruction> {
         let mut instrs = Vec::with_capacity(num_instrs);
         let mut addr = start_addr;
 

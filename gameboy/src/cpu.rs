@@ -2,6 +2,7 @@ use crate::instruction::Instruction;
 use crate::interrupt;
 use crate::memory::Memory;
 
+#[derive(PartialEq, Eq, Debug)]
 pub struct Cpu {
     pub pc: u16,
     pub sp: u16,
@@ -15,10 +16,10 @@ pub struct Cpu {
     pub h: u8,
     pub l: u8,
 
-    interrupts: bool,
+    pub interrupts: bool,
 
-    jumped: bool,
-    halted: bool,
+    pub jumped: bool,
+    pub halted: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -41,8 +42,8 @@ pub enum CpuRegister {
     L,
 }
 
-impl Cpu {
-    pub fn new() -> Cpu {
+impl Default for Cpu {
+    fn default() -> Self {
         Cpu {
             pc: 0x0100,
             sp: 0xFFFE,
@@ -59,13 +60,27 @@ impl Cpu {
             halted: false,
         }
     }
+}
 
-    pub fn cycle(&mut self, mem: &mut Memory, _: bool) -> u8 {
+impl Cpu {
+    pub fn new() -> Cpu {
+        Cpu::default()
+    }
+
+    pub fn cycle(&mut self, mem: &mut Memory, debug: bool) -> u8 {
         if self.halted {
             return 8;
         }
 
-        let instr = Instruction::read(&mem, self.pc);
+        let instr = Instruction::read(mem, self.pc);
+
+        if debug {
+            println!("Instruction: {:?}", &instr);
+        }
+
+        if self.pc == 0xC6B8 {
+            println!("Got here");
+        }
 
         let cycles = instr.execute(self, mem);
 

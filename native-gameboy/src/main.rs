@@ -132,7 +132,7 @@ fn main() -> Result<(), std::io::Error> {
                 }
             }
 
-            if ! window.is_open() {
+            if !window.is_open() {
                 return Ok(());
             }
         }
