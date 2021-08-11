@@ -1,12 +1,12 @@
 use crate::input::Input;
 use crate::interrupt::{set_interrupt, Interrupt};
 use crate::timer::Timer;
+use crate::rom::Cartridge;
 
 pub struct Memory {
-    cartridge: Vec<u8>,
+    cartridge: Cartridge,
     vram: Vec<u8>,
     ram: Vec<u8>,
-    eram: Vec<u8>,
     sprite: Vec<u8>,
     io: Vec<u8>,
     highram: Vec<u8>,
@@ -23,19 +23,19 @@ pub struct Memory {
 
 const VRAM_SIZE: usize = 8 * 1024;
 const RAM_SIZE: usize = 8 * 1024;
-const ERAM_SIZE: usize = 8 * 1024;
 const SPRITE_SIZE: usize = 160;
 const IO_SIZE: usize = 76;
 const HIGHRAM_SIZE: usize = 128;
 
+const MAX_SERIAL_BUF_LEN: usize = 50000;
+
 impl Memory {
-    pub fn new(rom_contents: Vec<u8>) -> Memory {
+    pub fn new(cartridge: Cartridge) -> Memory {
         // Move rom contents into Memory
         let mut mem = Memory {
-            cartridge: rom_contents,
+            cartridge,
             vram: vec![0; VRAM_SIZE],
             ram: vec![0; RAM_SIZE],
-            eram: vec![0; ERAM_SIZE],
             sprite: vec![0; SPRITE_SIZE],
             io: vec![0; IO_SIZE],
             highram: vec![0; HIGHRAM_SIZE],
@@ -86,9 +86,9 @@ impl Memory {
 
     fn mmu_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
-            0x0000..=0x7FFF => &mut self.unused,
+            0x0000..=0x7FFF => self.cartridge.mbc_rom_mut(addr),
             0x8000..=0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
-            0xA000..=0xBFFF => &mut self.eram[(addr - 0xA000) as usize],
+            0xA000..=0xBFFF => self.cartridge.mbc_rom_mut(addr),
             0xC000..=0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
             0xE000..=0xFDFF => &mut self.ram[(addr - 0xE000) as usize],
             0xFE00..=0xFE9F => &mut self.sprite[(addr - 0xFE00) as usize],
@@ -101,9 +101,9 @@ impl Memory {
 
     fn mmu(&self, addr: u16) -> &u8 {
         match addr {
-            0x0000..=0x7FFF => &self.cartridge[addr as usize],
+            0x0000..=0x7FFF => self.cartridge.mbc(addr),
             0x8000..=0x9FFF => &self.vram[(addr - 0x8000) as usize],
-            0xA000..=0xBFFF => &self.eram[(addr - 0xA000) as usize],
+            0xA000..=0xBFFF => self.cartridge.mbc(addr),
             0xC000..=0xDFFF => &self.ram[(addr - 0xC000) as usize],
             0xE000..=0xFDFF => &self.ram[(addr - 0xE000) as usize],
             0xFE00..=0xFE9F => &self.sprite[(addr - 0xFE00) as usize],
@@ -116,6 +116,12 @@ impl Memory {
 
     fn special(&mut self, addr: u16, val: u8) {
         match addr {
+            0x0000..=0x7FFF => {
+                self.cartridge.mbc_write(addr, val);
+            }
+            0xA000..=0xBFFF => {
+                self.cartridge.mbc_write(addr, val);
+            }
             0xFF00 => {
                 self.input.update(val);
             }
@@ -124,6 +130,9 @@ impl Memory {
 
                 if val as char == '\n' {
                     println!("{}", String::from_utf8_lossy(&self.serial_buf));
+                }
+
+                if self.serial_buf.len() > MAX_SERIAL_BUF_LEN {
                     self.serial_buf.clear();
                 }
             }
@@ -164,5 +173,9 @@ impl Memory {
         }
 
         bytes
+    }
+
+    pub fn serial_buffer(&self) -> &[u8] {
+        &self.serial_buf
     }
 }

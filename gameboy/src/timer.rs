@@ -84,10 +84,6 @@ impl Timer {
         *   |----|----------------|------------------|
         */
 
-        if !self.enabled {
-            return false;
-        }
-
         self.remainder_cycles += cycles;
 
         if self.remainder_cycles > 16 {
@@ -123,7 +119,6 @@ impl Timer {
             self.baseclock_count -= 64;
         }
 
-        //println!("Timer triggered");
-        interrupt
+        interrupt && self.enabled
     }
 }

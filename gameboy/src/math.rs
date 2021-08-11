@@ -9,7 +9,7 @@ pub fn subtract(cpu: &mut Cpu, val: u8) {
 
     let z = result == 0;
     let h = ((lhs & 0xf) as i8 - (val & 0xf) as i8) < 0;
-    let c = lhs > val;
+    let c = lhs < val;
 
     cpu.set_flags(z, true, h, c);
 }
@@ -323,7 +323,6 @@ mod tests {
         assert!(!cpu.h_flag());
         assert!(cpu.c_flag());
     }
-    
 
     #[test]
     fn test_rl_empty_carry() {

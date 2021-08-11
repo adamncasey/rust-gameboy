@@ -3,7 +3,7 @@ use crate::gpu::{Gpu, GpuDebugTrace};
 use crate::input::Input;
 use crate::interrupt;
 use crate::memory::Memory;
-use crate::rom::Rom;
+use crate::rom::Cartridge;
 
 pub struct GameBoy {
     title: String,
@@ -16,17 +16,23 @@ pub struct GameBoy {
 
 impl GameBoy {
     pub fn new(rom_contents: Vec<u8>) -> GameBoy {
-        let cartridge: Rom = Rom::load(rom_contents);
+        let cartridge: Cartridge= Cartridge::load_rom(rom_contents);
 
         if cartridge.rom_type != 0 {
-            //println!("ROM type unsupported {}", cartridge.rom_type);
+            println!("ROM type unsupported {}", cartridge.rom_type);
+        }
+        if cartridge.rom_size != 0 {
+            println!("ROM Size unsupported {}", cartridge.rom_size);
+        }
+        if cartridge.ram_size != 0 {
+            println!("RAM Size unsupported {}", cartridge.ram_size);
         }
 
         GameBoy {
-            title: cartridge.game_title,
+            title: cartridge.game_title.clone(),
             cpu: Cpu::new(),
             gpu: Gpu::new(),
-            mem: Memory::new(cartridge.rom_contents),
+            mem: Memory::new(cartridge),
             steps: 0,
         }
     }

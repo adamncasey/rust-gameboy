@@ -263,7 +263,7 @@ pub enum Instruction {
 
     ILLEGAL,
     UNIMPLEMENTED {
-        opcode: u8
+        opcode: u8,
     },
 }
 
@@ -414,7 +414,7 @@ impl Instruction {
         match *self {
             Instruction::Noop => cycles = 4,
             Instruction::ILLEGAL => panic!("Illegal instruction"),
-            Instruction::UNIMPLEMENTED { opcode }=> panic!("Unimplemented opcode 0x{:x}", opcode),
+            Instruction::UNIMPLEMENTED { opcode } => panic!("Unimplemented opcode 0x{:x}", opcode),
             Instruction::LDI16 { val, reg } => {
                 cpu.set16(reg, val);
                 cycles = 12;
@@ -698,7 +698,9 @@ impl Instruction {
                 cycles = 4;
             }
             Instruction::SBCA { reg_addr } => {
-                let val: u8 = mem.get(cpu.get16(reg_addr)).wrapping_add(cpu.c_flag() as u8);
+                let val: u8 = mem
+                    .get(cpu.get16(reg_addr))
+                    .wrapping_add(cpu.c_flag() as u8);
                 math::subtract(cpu, val);
                 cycles = 8;
             }
@@ -737,7 +739,9 @@ impl Instruction {
                 cycles = 4;
             }
             Instruction::ADCA => {
-                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL)).wrapping_add(cpu.c_flag() as u8);
+                let val: u8 = mem
+                    .get(cpu.get16(Cpu16Register::HL))
+                    .wrapping_add(cpu.c_flag() as u8);
                 math::add(cpu, val);
                 cycles = 8;
             }
@@ -1061,5 +1065,21 @@ mod tests {
             assert_eq!(instr.execute(&mut cpu, &mut mem), 4);
             assert_eq!(cpu.a, test.2);
         }
+    }
+
+    #[test]
+    fn subi_instruction() {
+        let mut cpu = Cpu::new();
+        let mut mem = Memory::new(vec![0; 32 * 1024]);
+
+        cpu.a = 0xD8;
+        cpu.f = 0xC0;
+
+        let instr = Instruction::SUBI { val: 5 };
+
+        instr.execute(&mut cpu, &mut mem);
+
+        assert_eq!(cpu.a, 0xD3);
+        assert_eq!(cpu.f, 0x40);
     }
 }
