@@ -1,0 +1,11 @@
+[package]
+name = "gameboy-tests"
+version = "0.1.0"
+authors = ["Adam Casey <adamncasey@gmail.com>"]
+edition = "2018"
+
+[profile.release]
+debug = true
+
+[dependencies]
+gameboy = { path = "../gameboy" }
