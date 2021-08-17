@@ -2,6 +2,7 @@ extern crate gameboy;
 
 use std::fs::File;
 use std::io::Read;
+use std::time::{Duration, Instant};
 
 use gameboy::gameboy::GameBoy;
 use gameboy::gpu::{GB_HSIZE, GB_VSIZE};
@@ -75,10 +76,13 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("Will panic when pc == {:X?}", pc_panic);
 
+    let mut last_draw = Instant::now();
+
     loop {
         let drawn = gb.cycle(debugging, Some(pc_panic));
 
-        if drawn {
+        if drawn || last_draw.elapsed().as_millis() > 20 {
+            last_draw = Instant::now();
             screen_rgba.copy_from_slice(gb.buffer_vec());
 
             // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

@@ -1,5 +1,5 @@
 pub use crate::cpu::Cpu;
-use crate::gpu::{Gpu, GpuDebugTrace};
+use crate::gpu::{Gpu, GpuDebugTrace, GpuMode};
 use crate::input::Input;
 use crate::interrupt;
 use crate::memory::Memory;
@@ -12,6 +12,7 @@ pub struct GameBoy {
     pub mem: Memory,
 
     pub steps: u64,
+    pub cycles: u64,
 }
 
 impl GameBoy {
@@ -34,6 +35,7 @@ impl GameBoy {
             gpu: Gpu::new(),
             mem: Memory::new(cartridge),
             steps: 0,
+            cycles: 0,
         }
     }
 
@@ -43,7 +45,8 @@ impl GameBoy {
 
     pub fn cycle(&mut self, debug: bool, debug_pc_panic: Option<u16>) -> bool {
         if debug {
-            println!(
+            print_cpu_trace(&self.cpu, self.cycles);
+            /*println!(
                 "State after {} total steps {} | Gpu PWR {} mode: {:?} elapsed {} ly {} stat {:X} lcdc {:X}",
                 self.steps,
                 self.cpu.print_state(),
@@ -60,10 +63,11 @@ impl GameBoy {
                 self.cpu.n_flag(),
                 self.cpu.h_flag(),
                 self.cpu.c_flag()
-            );
+            );*/
         }
 
         let cycles: u8 = self.cpu.cycle(&mut self.mem, debug);
+        self.cycles += cycles as u64;
 
         if let Some(pc) = debug_pc_panic {
             if self.cpu.pc == pc {
@@ -71,16 +75,17 @@ impl GameBoy {
             }
         }
 
+        let old_mode = self.gpu.mode;
+
         self.gpu.cycle(&mut self.mem, cycles);
 
-        self.mem.tick_timer(cycles);
+        let redraw_screen = old_mode != GpuMode::VBlank && self.gpu.mode == GpuMode::VBlank;
 
-        let mut redraw_screen = false;
+        self.mem.tick_timer(cycles);
 
         let int = interrupt::fetch_interrupt(&mut self.mem);
         if let Some(active) = int {
             if self.cpu.interrupt(&mut self.mem, active) {
-                redraw_screen = true;
             }
         }
 
@@ -115,4 +120,13 @@ impl GameBoy {
     pub fn buffer_vec(&self) -> &Vec<u8> {
         &self.gpu.screen_rgba
     }
+}
+
+fn print_cpu_trace(cpu: &Cpu, cycles: u64) {
+    let z = if cpu.z_flag() { 'Z' } else {'-'};
+    let n = if cpu.n_flag() { 'N' } else {'-'};
+    let c = if cpu.c_flag() { 'C' } else {'-'};
+    let h = if cpu.h_flag() { 'H' } else {'-'};
+
+    println!("A:{:02X} F:{}{}{}{} BC:{:02X}{:02X} DE:{:02x}{:02x} HL:{:02x}{:02x} SP:{:04x} PC:{:04x} (cy: {})", cpu.a, z, n, h, c, cpu.b, cpu.c, cpu.d, cpu.e, cpu.h, cpu.l, cpu.sp, cpu.pc, cycles);
 }

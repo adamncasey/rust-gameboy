@@ -13,7 +13,7 @@ const SPRITE_SIZE_BIT: u8 = 1 << 2;
 const SPRITE_DISP_BIT: u8 = 1 << 1;
 const BG_DISP_BIT: u8 = 1;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum GpuMode {
     OAMRead,
     VRAMRead,
@@ -131,7 +131,7 @@ impl Gpu {
             }
         };
 
-        ////println!("GPU State: {:?} {:?} {:?}", self.mode, self.line, self.mode_elapsed);
+        //println!("GPU State: {:?} {:?} {:?}", self.mode, self.line, self.mode_elapsed);
 
         mem.set(0xFF44, self.line);
 
@@ -153,7 +153,7 @@ impl Gpu {
         }
 
         if self.lcd_status_interrupt(mem, newlcdstat, newmode, newline) {
-            //println!("lcd_status_interrupt");
+            println!("lcd_status_interrupt");
             interrupt::set_interrupt(interrupt::Interrupt::LcdStat, mem);
         }
     }
@@ -205,6 +205,7 @@ impl Gpu {
         if lcdc & WINDOW_DISP_BIT != 0 {
             let _tilemap = select_tilemap(lcdc & WINDOW_TILEMAP_BIT != 0);
             // TODO draw_window
+            println!("Window enabled");
         }
 
         if lcdc & SPRITE_DISP_BIT != 0 {

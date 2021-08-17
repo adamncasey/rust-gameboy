@@ -864,7 +864,7 @@ impl Instruction {
                 let sp = cpu.sp;
                 cpu.set16(reg, mem.get16(sp));
                 cpu.sp = cpu.sp.wrapping_add(2);
-                cycles = 16;
+                cycles = 12;
             }
             Instruction::SWAP { reg } => {
                 let val = cpu.get(reg);

@@ -6,6 +6,8 @@ const CARTRIDGE_RAM_SIZE_03: usize = 32 * 1024;
 
 const BANK_SIZE: usize = 16 * 1024;
 
+const RAM_BANK_SIZE: usize = 8 * 1024;
+
 #[derive(Debug)]
 pub struct Cartridge {
     pub game_title: String,
@@ -14,6 +16,7 @@ pub struct Cartridge {
     pub ram_size: u8,
     pub rom_contents: Vec<u8>,
     pub rom_bank: usize,
+    pub ram_bank: usize,
 
     pub ram: Vec<u8>,
 }
@@ -34,6 +37,7 @@ impl Cartridge {
             ram_size: rom_contents[RAM_SIZE_OFFSET as usize],
             rom_contents,
             rom_bank: 0,
+            ram_bank: 0,
 
             ram: vec![0; CARTRIDGE_DEFAULT_RAM_SIZE],
         };
@@ -70,30 +74,33 @@ impl Cartridge {
     }
 
     pub fn mbc_write(&mut self, addr: u16, val: u8) {
-        println!("mbc write 0x{:x} {}", addr, val);
+        //println!("mbc write 0x{:x} {}", addr, val);
         if self.rom_type == 0 {
             return;
         }
 
         match addr {
             0x2000..=0x3FFF => {
-                let bank: u8 = val & 0x1f;
+                let bank: u8 = val & 0b00111111;
                 println!("bank switch to {}", bank);
+
                 self.rom_bank = bank as usize;
             }
             0x4000..=0x5FFF => {
-                let upper_bits = val & 0b01100000;
-                self.rom_bank = (self.rom_bank & 0b00011111) | upper_bits as usize;
-                println!("high bits bank switch to {}", self.rom_bank);
+                self.ram_bank = val as usize;
+                /*let upper_bits = val & 0b01100000;
+                self.rom_bank = (self.rom_bank & 0b00011111) | upper_bits as usize;*/
+                println!("RAM Bank switch to {}", self.ram_bank);
             }
-            _ => { println!("Unknown mbc write 0x{:x} = {}", addr, val); }
+            _ => { /*println!("Unknown mbc write 0x{:x} = {}", addr, val);*/ }
         }
     }
 
     pub fn mbc_rom_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
-            0x0000..=0x7FFF => &mut self.rom_contents[self.rom_bank * BANK_SIZE + addr as usize],
-            0xA000..=0xBFFF => &mut self.ram[(addr - 0xA000) as usize],
+            0x0000..=0x3FFF => &mut self.rom_contents[addr as usize],
+            0x4000..=0x7FFF => &mut self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize],
+            0xA000..=0xBFFF => &mut self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);
             }
@@ -102,8 +109,9 @@ impl Cartridge {
 
     pub fn mbc(&self, addr: u16) -> &u8 {
         match addr {
-            0x0000..=0x7FFF => &self.rom_contents[self.rom_bank * BANK_SIZE + addr as usize],
-            0xA000..=0xBFFF => &self.ram[(addr - 0xA000) as usize],
+            0x0000..=0x3FFF => &self.rom_contents[addr as usize],
+            0x4000..=0x7FFF => &self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize],
+            0xA000..=0xBFFF => &self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);
             }

@@ -75,7 +75,7 @@ impl Cpu {
         let instr = Instruction::read(mem, self.pc);
 
         if debug {
-            println!("Instruction: {:?}", &instr);
+            //println!("Instruction: {:?}", &instr);
         }
 
         if self.pc == 0xC6B8 {
