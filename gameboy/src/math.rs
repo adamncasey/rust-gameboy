@@ -14,6 +14,22 @@ pub fn subtract(cpu: &mut Cpu, val: u8) {
     cpu.set_flags(z, true, h, c);
 }
 
+pub fn sbc(cpu: &mut Cpu, val: u8) {
+    let carry: u8 = if cpu.c_flag() { 1 } else { 0 };
+    let lhs: u8 = cpu.get(CpuRegister::A);
+
+    let full_result: u16 = (lhs as u16).wrapping_sub(val as u16).wrapping_sub(carry as u16);
+    let result: u8 = (full_result & 0xff) as u8;
+
+    cpu.set(CpuRegister::A, result);
+
+    let z = result == 0;
+    let h = (((lhs & 0xf) as i8 - (val & 0xf) as i8) - (carry as i8)) < 0;
+    let c = full_result > 0xff;
+
+    cpu.set_flags(z, true, h, c);
+}
+
 pub fn add(cpu: &mut Cpu, val: u8) {
     let lhs: u8 = cpu.get(CpuRegister::A);
 
@@ -28,6 +44,22 @@ pub fn add(cpu: &mut Cpu, val: u8) {
     cpu.set_flags(z, false, h, c);
 }
 
+pub fn adc(cpu: &mut Cpu, val: u8) {
+    let carry: u8 = if cpu.c_flag() { 1 } else { 0 };
+    let lhs: u8 = cpu.get(CpuRegister::A);
+
+    let full_result: u16 = (lhs as u16) + (val as u16) + (carry as u16);
+    let result: u8 = (full_result & 0xff) as u8;
+
+    cpu.set(CpuRegister::A, result);
+
+    let z = result == 0;
+    let h = (lhs & 0xf) + (val & 0xf) + carry > 0xf;
+    let c = full_result > 0xff;
+
+    cpu.set_flags(z, false, h, c);
+}
+
 pub fn add16(cpu: &mut Cpu, reg: Cpu16Register, val: u16) {
     let lhs: u16 = cpu.get16(reg);
 
@@ -36,7 +68,7 @@ pub fn add16(cpu: &mut Cpu, reg: Cpu16Register, val: u16) {
     cpu.set16(reg, result);
 
     let z = cpu.z_flag();
-    let h = ((lhs & 0xf00).wrapping_add(val & 0xf00) & 0x10) != 0;
+    let h = (lhs & 0xfff).wrapping_add(val & 0xfff) > 0xfff;
     let c = result <= lhs && (val != 0);
     cpu.set_flags(z, false, h, c);
 }

@@ -693,20 +693,17 @@ impl Instruction {
                 cycles = 8;
             }
             Instruction::SBCR { reg } => {
-                let val: u8 = cpu.get(reg).wrapping_add(cpu.c_flag() as u8);
-                math::subtract(cpu, val);
+                let val: u8 = cpu.get(reg);
+                math::sbc(cpu, val);
                 cycles = 4;
             }
             Instruction::SBCA { reg_addr } => {
-                let val: u8 = mem
-                    .get(cpu.get16(reg_addr))
-                    .wrapping_add(cpu.c_flag() as u8);
-                math::subtract(cpu, val);
+                let val: u8 = mem.get(cpu.get16(reg_addr));
+                math::sbc(cpu, val);
                 cycles = 8;
             }
             Instruction::SBCI { val } => {
-                let newval = val.wrapping_add(cpu.c_flag() as u8);
-                math::subtract(cpu, newval);
+                math::sbc(cpu, val);
                 cycles = 8;
             }
             Instruction::ADDR { reg } => {
@@ -733,21 +730,17 @@ impl Instruction {
                 cycles = 16;
             }
             Instruction::ADC { reg } => {
-                // TODO Carry flag interaction?
-                let val: u8 = cpu.get(reg).wrapping_add(cpu.c_flag() as u8);
-                math::add(cpu, val);
+                let val: u8 = cpu.get(reg);
+                math::adc(cpu, val);
                 cycles = 4;
             }
             Instruction::ADCA => {
-                let val: u8 = mem
-                    .get(cpu.get16(Cpu16Register::HL))
-                    .wrapping_add(cpu.c_flag() as u8);
-                math::add(cpu, val);
+                let val: u8 = mem.get(cpu.get16(Cpu16Register::HL));
+                math::adc(cpu, val);
                 cycles = 8;
             }
             Instruction::ADCI { val } => {
-                // TODO Carry flag interaction?
-                math::add(cpu, val.wrapping_add(cpu.c_flag() as u8));
+                math::adc(cpu, val);
                 cycles = 8;
             }
             Instruction::XORR { reg } => {
@@ -1034,14 +1027,15 @@ impl Instruction {
 
 #[cfg(test)]
 mod tests {
-    use crate::cpu::{Cpu, CpuRegister};
+    use crate::cpu::{Cpu, Cpu16Register, CpuRegister};
     use crate::instruction::Instruction;
     use crate::memory::Memory;
+    use crate::rom::Cartridge;
 
     #[test]
     fn daa_instruction() {
         let mut cpu = Cpu::new();
-        let mut mem = Memory::new(vec![0; 32 * 1024]);
+        let mut mem = Memory::new(Cartridge::load_rom(vec![0; 32 * 1024]));
 
         let test_cases = vec![
             (0b0001_0001, 0b0000_0000, 0b0001_0001),
@@ -1070,7 +1064,7 @@ mod tests {
     #[test]
     fn subi_instruction() {
         let mut cpu = Cpu::new();
-        let mut mem = Memory::new(vec![0; 32 * 1024]);
+        let mut mem = Memory::new(Cartridge::load_rom(vec![0; 32 * 1024]));
 
         cpu.a = 0xD8;
         cpu.f = 0xC0;
@@ -1081,5 +1075,33 @@ mod tests {
 
         assert_eq!(cpu.a, 0xD3);
         assert_eq!(cpu.f, 0x40);
+    }
+
+    #[test]
+    fn add16_instruction() {
+        let mut cpu = Cpu::new();
+        let mut mem = Memory::new(Cartridge::load_rom(vec![0; 32 * 1024]));
+
+        cpu.a = 0x0F;
+        cpu.b = 0x00;
+        cpu.c = 0x00;
+        cpu.e = 0x01;
+        cpu.d = 0x00;
+        cpu.f = 0x00;
+        cpu.h = 0x00;
+        cpu.l = 0x00;
+        let instr = Instruction::ADD16 {
+            src: Cpu16Register::DE,
+        };
+
+        println!("{:?}", cpu);
+
+        instr.execute(&mut cpu, &mut mem);
+
+        println!("{:?}", cpu);
+
+        assert_eq!(cpu.l, 0x01);
+        assert_eq!(cpu.e, 0x01);
+        assert_eq!(cpu.f, 0x00);
     }
 }
