@@ -10,6 +10,8 @@ use wasm_bindgen::prelude::*;
 
 use web_sys::console;
 
+pub use gameboy::cpu::Cpu;
+
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! consolelog {
     ( $( $t:tt )* ) => {

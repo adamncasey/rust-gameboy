@@ -1,7 +1,7 @@
 use crate::input::Input;
 use crate::interrupt::{set_interrupt, Interrupt};
-use crate::timer::Timer;
 use crate::rom::Cartridge;
+use crate::timer::Timer;
 
 pub struct Memory {
     cartridge: Cartridge,

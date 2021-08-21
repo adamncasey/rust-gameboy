@@ -18,7 +18,9 @@ pub fn sbc(cpu: &mut Cpu, val: u8) {
     let carry: u8 = if cpu.c_flag() { 1 } else { 0 };
     let lhs: u8 = cpu.get(CpuRegister::A);
 
-    let full_result: u16 = (lhs as u16).wrapping_sub(val as u16).wrapping_sub(carry as u16);
+    let full_result: u16 = (lhs as u16)
+        .wrapping_sub(val as u16)
+        .wrapping_sub(carry as u16);
     let result: u8 = (full_result & 0xff) as u8;
 
     cpu.set(CpuRegister::A, result);
@@ -257,15 +259,18 @@ pub fn daa(cpu: &mut Cpu) {
     let c_flag = cpu.c_flag();
     let n_flag = cpu.n_flag();
 
-    let mut adjust: u8 = 0;
+    let mut adjust: u8 = if c_flag { 0x60 } else { 0x00 };
     let mut carry = false;
 
     if h_flag || (!n_flag && ((cpu.a & 0x0F) > 0x09)) {
-        adjust = 0x06;
+        adjust |= 0x06;
     }
 
-    if c_flag || (!n_flag && ((cpu.a & 0xF0) > 0x90)) {
+    if c_flag || (!n_flag && (cpu.a > 0x99)) {
         adjust |= 0x60;
+    }
+
+    if (((adjust as u16) << 2) & 0x100) != 0 {
         carry = true;
     }
 

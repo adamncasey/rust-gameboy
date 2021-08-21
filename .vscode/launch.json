@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/native-gameboy.exe",
-            "args": ["${workspaceFolder}/cpu_instrs/individual/06-ld r,r.gb"],
+            "args": ["${workspaceFolder}/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

@@ -2,6 +2,7 @@ use std::str;
 
 const CARTRIDGE_DEFAULT_RAM_SIZE: usize = 8 * 1024;
 
+const CARTRIDGE_RAM_SIZE_01: usize = 2 * 1024;
 const CARTRIDGE_RAM_SIZE_03: usize = 32 * 1024;
 
 const BANK_SIZE: usize = 16 * 1024;
@@ -61,11 +62,14 @@ impl Cartridge {
                     "ROM {:} is of type {:?} but only has {:?}kb of contents",
                     rom.game_title,
                     rom.rom_type,
-                    rom.rom_contents.len()
+                    rom.rom_contents.len() / 1024
                 );
             }
         }
 
+        if rom.ram_size == 0x01 {
+            rom.ram = vec![0; CARTRIDGE_RAM_SIZE_01];
+        }
         if rom.ram_size == 0x03 {
             rom.ram = vec![0; CARTRIDGE_RAM_SIZE_03];
         }
@@ -99,8 +103,13 @@ impl Cartridge {
     pub fn mbc_rom_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
             0x0000..=0x3FFF => &mut self.rom_contents[addr as usize],
-            0x4000..=0x7FFF => &mut self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize],
-            0xA000..=0xBFFF => &mut self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
+            0x4000..=0x7FFF => {
+                &mut self.rom_contents
+                    [BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+            }
+            0xA000..=0xBFFF => {
+                &mut self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize]
+            }
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);
             }
@@ -110,7 +119,9 @@ impl Cartridge {
     pub fn mbc(&self, addr: u16) -> &u8 {
         match addr {
             0x0000..=0x3FFF => &self.rom_contents[addr as usize],
-            0x4000..=0x7FFF => &self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize],
+            0x4000..=0x7FFF => {
+                &self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+            }
             0xA000..=0xBFFF => &self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);

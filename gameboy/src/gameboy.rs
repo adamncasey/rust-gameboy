@@ -17,7 +17,7 @@ pub struct GameBoy {
 
 impl GameBoy {
     pub fn new(rom_contents: Vec<u8>) -> GameBoy {
-        let cartridge: Cartridge= Cartridge::load_rom(rom_contents);
+        let cartridge: Cartridge = Cartridge::load_rom(rom_contents);
 
         if cartridge.rom_type != 0 {
             println!("ROM type unsupported {}", cartridge.rom_type);
@@ -85,8 +85,7 @@ impl GameBoy {
 
         let int = interrupt::fetch_interrupt(&mut self.mem);
         if let Some(active) = int {
-            if self.cpu.interrupt(&mut self.mem, active) {
-            }
+            if self.cpu.interrupt(&mut self.mem, active) {}
         }
 
         self.steps += 1;
@@ -123,10 +122,10 @@ impl GameBoy {
 }
 
 fn print_cpu_trace(cpu: &Cpu, cycles: u64) {
-    let z = if cpu.z_flag() { 'Z' } else {'-'};
-    let n = if cpu.n_flag() { 'N' } else {'-'};
-    let c = if cpu.c_flag() { 'C' } else {'-'};
-    let h = if cpu.h_flag() { 'H' } else {'-'};
+    let z = if cpu.z_flag() { 'Z' } else { '-' };
+    let n = if cpu.n_flag() { 'N' } else { '-' };
+    let c = if cpu.c_flag() { 'C' } else { '-' };
+    let h = if cpu.h_flag() { 'H' } else { '-' };
 
     println!("A:{:02X} F:{}{}{}{} BC:{:02X}{:02X} DE:{:02x}{:02x} HL:{:02x}{:02x} SP:{:04x} PC:{:04x} (cy: {})", cpu.a, z, n, h, c, cpu.b, cpu.c, cpu.d, cpu.e, cpu.h, cpu.l, cpu.sp, cpu.pc, cycles);
 }
