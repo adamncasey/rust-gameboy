@@ -37,7 +37,7 @@ impl Cartridge {
             rom_size: rom_contents[ROM_SIZE_OFFSET as usize],
             ram_size: rom_contents[RAM_SIZE_OFFSET as usize],
             rom_contents,
-            rom_bank: 0,
+            rom_bank: 1,
             ram_bank: 0,
 
             ram: vec![0; CARTRIDGE_DEFAULT_RAM_SIZE],
@@ -86,6 +86,8 @@ impl Cartridge {
         match addr {
             0x2000..=0x3FFF => {
                 let bank: u8 = val & 0b00111111;
+                let bank = if bank == 0 { 1 } else { bank };
+
                 println!("bank switch to {}", bank);
 
                 self.rom_bank = bank as usize;
@@ -104,8 +106,7 @@ impl Cartridge {
         match addr {
             0x0000..=0x3FFF => &mut self.rom_contents[addr as usize],
             0x4000..=0x7FFF => {
-                &mut self.rom_contents
-                    [BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+                &mut self.rom_contents[self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
             }
             0xA000..=0xBFFF => {
                 &mut self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize]
@@ -120,7 +121,7 @@ impl Cartridge {
         match addr {
             0x0000..=0x3FFF => &self.rom_contents[addr as usize],
             0x4000..=0x7FFF => {
-                &self.rom_contents[BANK_SIZE + self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+                &self.rom_contents[self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
             }
             0xA000..=0xBFFF => &self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
             _ => {

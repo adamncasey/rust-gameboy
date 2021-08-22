@@ -198,14 +198,32 @@ impl Gpu {
                 tiles,
                 tiledataselect,
                 tilemap,
+                mem.get(0xFF43),
+                mem.get(0xFF42),
+                0,
+                0,
                 &mut self.screen_rgba,
             );
         }
 
         if lcdc & WINDOW_DISP_BIT != 0 {
-            let _tilemap = select_tilemap(lcdc & WINDOW_TILEMAP_BIT != 0);
+            let tilemap = select_tilemap(lcdc & WINDOW_TILEMAP_BIT != 0);
             // TODO draw_window
-            println!("Window enabled");
+            //println!("Window enabled");
+
+            draw_background(
+                self.line,
+                mem,
+                bg_win_colours,
+                tiles,
+                false,
+                tilemap,
+                0,
+                0,
+                0,
+                0,
+                &mut self.screen_rgba,
+            );
         }
 
         if lcdc & SPRITE_DISP_BIT != 0 {
@@ -232,10 +250,17 @@ fn draw_background(
     tiledata: u16,
     tiledataselect: bool,
     tilemap: u16,
+    scroll_x: u8,
+    scroll_y: u8,
+    offset_x: u8,
+    offset_y: u8,
     rgba: &mut [u8],
 ) {
-    let scy: u8 = mem.get(0xFF42);
-    let bgy: u16 = u16::from(line.wrapping_add(scy));
+    if line < offset_y {
+        return;
+    }
+
+    let bgy: u16 = u16::from(line.wrapping_add(scroll_y)) - offset_y as u16;
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -245,13 +270,14 @@ fn draw_background(
 
     let ty: u16 = bgy % 8;
 
-    let scx: u8 = mem.get(0xFF43);
-
     for i in 0..=GB_HSIZE {
-        let bgx = ((i as u16) + u16::from(scx)) % 256;
+        if i < offset_x as usize {
+            continue;
+        }
+
+        let bgx = ((i as u16) + u16::from(scroll_x)) % 256 - offset_x as u16;
         let htile = bgx / 8;
         if htile >= 32 {
-            //println!("reached hend of tile {} {} {}", htile, line, i);
             return;
         }
 
@@ -417,9 +443,11 @@ fn get_tile_row_data(mem: &Memory, tiledata: u16, tilenum: i32, ty: u16) -> (u8,
 fn get_tile_colour(tilerow: (u8, u8), tx: u8) -> u8 {
     let (byte1, byte2) = tilerow;
 
-    let bit = 0b1 << (7 - tx);
+    let offset = (7 - std::cmp::min(7, tx));
 
-    ((byte1 & bit) >> (7 - tx)) | (((byte2 & bit) >> (7 - tx)) << 1)
+    let bit = 0b1 << offset;
+
+    ((byte1 & bit) >> offset) | (((byte2 & bit) >> offset) << 1)
 }
 
 fn apply_palette(colour: u8, pal: u8) -> u8 {
