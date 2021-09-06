@@ -61,12 +61,21 @@ impl Gpu {
         }
     }
 
-    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8) {
+    pub fn cycle(&mut self, mem: &mut Memory, elapsed: u8, halted: bool) {
         // TODO SLOW currently load this byte twice
         let lcdc: u8 = mem.get(0xFF40);
 
         if (lcdc & LCD_ON_BIT) == 0 {
+            if halted {
+                println!("Gpu disabled & cpu halted - uh oh");
+                panic!("nope");
+            }
+
             self.debug_lcd_pwr = false;
+            self.mode = GpuMode::OAMRead;
+            self.line = 0;
+            mem.set(0xFF44, self.line);
+
             let lcdstat: u8 = mem.get(0xFF41);
 
             let newlcdstat: u8 = lcdstat & 0xFC;
@@ -78,11 +87,11 @@ impl Gpu {
 
         self.debug_lcd_pwr = true;
 
+        self.mode_elapsed += u32::from(elapsed);
         let mut vblank = false;
         let mut newline = false;
         let mut newmode = false;
 
-        self.mode_elapsed += u32::from(elapsed);
         match self.mode {
             GpuMode::OAMRead => {
                 if self.mode_elapsed >= 80 {

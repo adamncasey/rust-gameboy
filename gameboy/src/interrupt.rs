@@ -17,11 +17,14 @@ const INT_JOYPAD: u8 = 16;
 pub fn set_interrupt(int: Interrupt, mem: &mut Memory) {
     let current = mem.get(0xFF0F);
 
+    let enabled = mem.get(0xFFFF);
+
     let new = match int {
-        Interrupt::VBlank => current | INT_VBLANK,
+        Interrupt::VBlank if (enabled & INT_VBLANK) != 0 => current | INT_VBLANK,
         Interrupt::LcdStat => current | INT_LCDSTAT,
         Interrupt::Timer => current | INT_TIMER,
         Interrupt::Joypad => current | INT_JOYPAD,
+        _ => current,
     };
 
     mem.set(0xFF0F, new);

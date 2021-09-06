@@ -58,6 +58,7 @@ impl Memory {
     pub fn get(&self, addr: u16) -> u8 {
         match addr {
             0xFF00 => self.input.value(),
+            0xFF4D => 0xFF,
             0xFF04..=0xFF07 => self.timer.read(addr),
             _ => *self.mmu(addr),
         }
@@ -139,6 +140,9 @@ impl Memory {
             0xFF04..=0xFF07 => {
                 self.timer.write(addr, val);
             }
+            0xFF07 => {
+                println!("Wrote IF {:2x}", val);
+            }
             0xFF46 => {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
@@ -148,6 +152,9 @@ impl Memory {
                     let val: u8 = self.get(source + i);
                     self.set(target + i, val);
                 }
+            },
+            0xFF4D => {
+                println!("Speed")
             }
             _ => (),
         }

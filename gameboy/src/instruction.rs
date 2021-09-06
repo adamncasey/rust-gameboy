@@ -139,7 +139,7 @@ pub enum Instruction {
         src: Cpu16Register,
     },
     ADDSP {
-        val: u8,
+        val: i8,
     },
     ADC {
         reg: CpuRegister,
@@ -459,13 +459,21 @@ impl Instruction {
                 cycles = 16;
             }
             Instruction::LDHLI { offset } => {
-                let addr = i32::from(cpu.get16(Cpu16Register::SP)) + i32::from(offset);
-                cpu.set16(Cpu16Register::HL, addr as u16);
+                let start = cpu.get16(Cpu16Register::SP);
+
+                let result = (start as i32 + offset as i32) as u16;
+
+                let h = ((start ^ (offset as u16) ^ result) & 0x10) == 0x10;
+                let c = ((start ^ (offset as u16) ^ result) & 0x100) == 0x100;
+
+                cpu.set16(Cpu16Register::HL, result as u16);
+                
+                cpu.set_flags(false, false, h, c);
                 cycles = 12;
-                // TODO set H/C flags. Z + N = false.
             }
             Instruction::LDSPA { addr } => {
-                cpu.set16(Cpu16Register::SP, mem.get16(addr));
+                mem.set16(addr, cpu.get16(Cpu16Register::SP));
+                //cpu.set16(Cpu16Register::SP, mem.get16(addr));
                 cycles = 20;
             }
             Instruction::LDSPHL => {
@@ -639,7 +647,7 @@ impl Instruction {
             }
             Instruction::RST { addr } => {
                 // Store next pc on stack & jump to addr
-                cpu.sp -= 2;
+                cpu.sp = cpu.sp.wrapping_sub(2);
                 mem.set16(cpu.sp, cpu.pc + Instruction::mem_size(self));
                 cpu.jump(addr);
                 cycles = 16;
@@ -723,10 +731,20 @@ impl Instruction {
             Instruction::ADD16 { src } => {
                 let val: u16 = cpu.get16(src);
                 math::add16(cpu, Cpu16Register::HL, val);
-                cycles = 8;
+                cycles = 16;
             }
             Instruction::ADDSP { val } => {
-                math::add16(cpu, Cpu16Register::SP, u16::from(val));
+                
+                let start = cpu.get16(Cpu16Register::SP);
+
+                let result = (start as i32 + val as i32) as u16;
+
+                let h = ((start ^ (val as u16) ^ result) & 0x10) == 0x10;
+                let c = ((start ^ (val as u16) ^ result) & 0x100) == 0x100;
+
+                cpu.set16(Cpu16Register::SP, result as u16);
+                
+                cpu.set_flags(false, false, h, c);
                 cycles = 16;
             }
             Instruction::ADC { reg } => {

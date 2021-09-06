@@ -12,15 +12,83 @@ const RAM_BANK_SIZE: usize = 8 * 1024;
 #[derive(Debug)]
 pub struct Cartridge {
     pub game_title: String,
-    pub rom_type: u8,
+    pub mbc_type: MbcType,
     pub rom_size: u8,
     pub ram_size: u8,
     pub rom_contents: Vec<u8>,
-    pub rom_bank: usize,
-    pub ram_bank: usize,
 
     pub ram: Vec<u8>,
+
+    unused: u8,
 }
+
+#[derive(Debug)]
+pub enum MbcType {
+    None,
+    Mbc1 {
+        rom_bank: u8,
+        ram_bank: Option<u8>
+    },
+    Mbc3 {
+        rom_bank: u8,
+        ram_bank: Option<u8>,
+    }
+}
+
+impl MbcType {
+    fn from_byte(n: u8) -> MbcType {
+        match n {
+            0x00 => MbcType::None,
+            0x01..=0x03 => MbcType::Mbc1 { rom_bank: 1, ram_bank: None },
+            0x0f..=0x13 => MbcType::Mbc3 { rom_bank: 1, ram_bank: None },
+            _ => { panic!("Unsupported ROM Type: {}", n); }
+        }
+    }
+
+    fn rom_banked_offset(&self, addr: u16) -> usize {
+        let bank = match self {
+            MbcType::None => Some(1),
+            MbcType::Mbc1 { rom_bank, ..} => {
+                Some(*rom_bank as usize)
+            },
+            MbcType::Mbc3 { rom_bank, ..} => {
+                Some(*rom_bank as usize)
+            }
+        };
+        let offset = (addr - 0x4000) as usize;
+        if let Some(bank) = bank {
+            bank * BANK_SIZE + offset
+        }
+        else {
+            offset
+        }
+    }
+    
+    fn ram_banked_offset(&self, addr: u16) -> usize {
+        let bank = match self {
+            MbcType::None => Some(0),
+            MbcType::Mbc1 { rom_bank, ram_bank } => {
+                ram_bank.map(|ram_bank| ram_bank as usize)
+            },
+            MbcType::Mbc3 { rom_bank, ram_bank } => {
+                ram_bank.map(|ram_bank| ram_bank as usize)
+            }
+        };
+
+        let offset = (addr - 0xA000) as usize;
+        let result = if let Some(bank) = bank {
+            bank * RAM_BANK_SIZE + offset
+        }
+        else {
+            offset
+        };
+
+        //println!("ram_banked_offset {:?} {:4x}", bank, result);
+
+        result
+    }
+}
+
 
 const ROM_TITLE_START: usize = 0x134;
 const ROM_TITLE_LEN: usize = 16;
@@ -33,14 +101,13 @@ impl Cartridge {
     pub fn load_rom(rom_contents: Vec<u8>) -> Cartridge {
         let mut rom = Cartridge {
             game_title: String::from(""),
-            rom_type: rom_contents[ROM_TYPE_OFFSET as usize],
+            mbc_type: MbcType::from_byte(rom_contents[ROM_TYPE_OFFSET as usize]),
             rom_size: rom_contents[ROM_SIZE_OFFSET as usize],
             ram_size: rom_contents[RAM_SIZE_OFFSET as usize],
             rom_contents,
-            rom_bank: 1,
-            ram_bank: 0,
 
             ram: vec![0; CARTRIDGE_DEFAULT_RAM_SIZE],
+            unused: 0,
         };
 
         // Copy out game_title
@@ -55,18 +122,6 @@ impl Cartridge {
             .unwrap_or("Empty title")
             .to_string();
 
-        if rom.rom_type == 0x13 {
-            // confirm size of rom
-            if rom.rom_contents.len() < 1024 * 1024 {
-                panic!(
-                    "ROM {:} is of type {:?} but only has {:?}kb of contents",
-                    rom.game_title,
-                    rom.rom_type,
-                    rom.rom_contents.len() / 1024
-                );
-            }
-        }
-
         if rom.ram_size == 0x01 {
             rom.ram = vec![0; CARTRIDGE_RAM_SIZE_01];
         }
@@ -78,38 +133,79 @@ impl Cartridge {
     }
 
     pub fn mbc_write(&mut self, addr: u16, val: u8) {
-        //println!("mbc write 0x{:x} {}", addr, val);
-        if self.rom_type == 0 {
-            return;
-        }
+        match self.mbc_type {
+            MbcType::None => {},
+            MbcType::Mbc1 { ref mut rom_bank, ref mut ram_bank } => {
+                match addr {
+                    0x0000..=0x1fff => {
+                        if (val & 0x0f) == 0x0A {
+                            *ram_bank = Some(0);
+                        }
+                        else {
+                            *ram_bank = None;
+                        }
+                    },
+                    0x2000..=0x3fff => {
+                        let bank: u8 = val & 0b00011111;
+                        let bank = if bank == 0 { 1 } else { bank };
+                        let bank = (*rom_bank & 0b01100000) | bank;
+        
+                        *rom_bank = bank;
 
-        match addr {
-            0x2000..=0x3FFF => {
-                let bank: u8 = val & 0b00111111;
-                let bank = if bank == 0 { 1 } else { bank };
+                        //println!("Set ROM Bank to {}", bank);
+                    },
+                    0x4000..=0x5FFF => {
+                        let bank: u8 = val & 0b11;
 
-                println!("bank switch to {}", bank);
+                        *ram_bank = Some(bank);
+                        
+                        //println!("Set RAM Bank to {}", bank);
+                    },
+                    _ => {}
+                };
+            },
+            MbcType::Mbc3 { ref mut rom_bank, ref mut ram_bank }=> {
+                match addr {
+                    0x0000..=0x1fff => {
+                        if (val & 0x0f) == 0x0A {
+                            *ram_bank = Some(1);
+                        }
+                        else {
+                            *ram_bank = None;
+                        }
+                    },
+                    0x2000..=0x3fff => {
+                        let bank: u8 = val & 0b01111111;
+                        let bank = if bank == 0 { 1 } else { bank };
 
-                self.rom_bank = bank as usize;
+                        *rom_bank = bank;
+                    }
+                    0x4000..=0x5FFF => {
+                        let bank: u8 = val & 0b11;
+
+                        *ram_bank = Some(bank);
+                        
+                        println!("Set RAM Bank to {}", bank);
+                    },
+                    _ => {}
+                };
             }
-            0x4000..=0x5FFF => {
-                self.ram_bank = val as usize;
-                /*let upper_bits = val & 0b01100000;
-                self.rom_bank = (self.rom_bank & 0b00011111) | upper_bits as usize;*/
-                println!("RAM Bank switch to {}", self.ram_bank);
-            }
-            _ => { /*println!("Unknown mbc write 0x{:x} = {}", addr, val);*/ }
-        }
+        };
     }
 
     pub fn mbc_rom_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
-            0x0000..=0x3FFF => &mut self.rom_contents[addr as usize],
+            0x0000..=0x3FFF => {
+                //println!("Writing to ROM? {:4x}", addr);
+                &mut self.unused
+            }
             0x4000..=0x7FFF => {
-                &mut self.rom_contents[self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+                &mut self.rom_contents[self.mbc_type.rom_banked_offset(addr)]
             }
             0xA000..=0xBFFF => {
-                &mut self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize]
+                let ram_offset = self.mbc_type.ram_banked_offset(addr);
+                //println!("Write RAM {:4x}", ram_offset);
+                &mut self.ram[ram_offset]
             }
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);
@@ -121,9 +217,13 @@ impl Cartridge {
         match addr {
             0x0000..=0x3FFF => &self.rom_contents[addr as usize],
             0x4000..=0x7FFF => {
-                &self.rom_contents[self.rom_bank * BANK_SIZE + (addr - 0x4000) as usize]
+                &self.rom_contents[self.mbc_type.rom_banked_offset(addr)]
             }
-            0xA000..=0xBFFF => &self.ram[RAM_BANK_SIZE * self.ram_bank + (addr - 0xA000) as usize],
+            0xA000..=0xBFFF => {
+                let ram_offset = self.mbc_type.ram_banked_offset(addr);
+                //println!("Read RAM {:4x}", ram_offset);
+                &self.ram[ram_offset]
+            },
             _ => {
                 panic!("ROM MBC invalid address 0x{:x}", addr);
             }

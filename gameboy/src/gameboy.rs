@@ -19,9 +19,8 @@ impl GameBoy {
     pub fn new(rom_contents: Vec<u8>) -> GameBoy {
         let cartridge: Cartridge = Cartridge::load_rom(rom_contents);
 
-        if cartridge.rom_type != 0 {
-            println!("ROM type unsupported {}", cartridge.rom_type);
-        }
+        println!("ROM Type: {:?}", cartridge.mbc_type);
+
         if cartridge.rom_size != 0 {
             println!("ROM Size unsupported {}", cartridge.rom_size);
         }
@@ -45,7 +44,7 @@ impl GameBoy {
 
     pub fn cycle(&mut self, debug: bool, debug_pc_panic: Option<u16>) -> bool {
         if debug {
-            print_cpu_trace(&self.cpu, self.cycles);
+            print_cpu_trace(&self.cpu, self.cycles, self.mem.get(0xFF40) & (1 << 7));
             /*println!(
                 "State after {} total steps {} | Gpu PWR {} mode: {:?} elapsed {} ly {} stat {:X} lcdc {:X}",
                 self.steps,
@@ -77,7 +76,7 @@ impl GameBoy {
 
         let old_mode = self.gpu.mode;
 
-        self.gpu.cycle(&mut self.mem, cycles);
+        self.gpu.cycle(&mut self.mem, cycles, self.cpu.halted);
 
         let redraw_screen = old_mode != GpuMode::VBlank && self.gpu.mode == GpuMode::VBlank;
 
@@ -121,11 +120,11 @@ impl GameBoy {
     }
 }
 
-fn print_cpu_trace(cpu: &Cpu, cycles: u64) {
+fn print_cpu_trace(cpu: &Cpu, cycles: u64, gpu: u8) {
     let z = if cpu.z_flag() { 'Z' } else { '-' };
     let n = if cpu.n_flag() { 'N' } else { '-' };
     let c = if cpu.c_flag() { 'C' } else { '-' };
     let h = if cpu.h_flag() { 'H' } else { '-' };
 
-    println!("A:{:02X} F:{}{}{}{} BC:{:02X}{:02X} DE:{:02x}{:02x} HL:{:02x}{:02x} SP:{:04x} PC:{:04x} (cy: {})", cpu.a, z, n, h, c, cpu.b, cpu.c, cpu.d, cpu.e, cpu.h, cpu.l, cpu.sp, cpu.pc, cycles);
+    println!("A:{:02X} F:{}{}{}{} BC:{:02X}{:02X} DE:{:02x}{:02x} HL:{:02x}{:02x} SP:{:04x} PC:{:04x} (cy: {}) gpu: {}", cpu.a, z, n, h, c, cpu.b, cpu.c, cpu.d, cpu.e, cpu.h, cpu.l, cpu.sp, cpu.pc, cycles, gpu);
 }

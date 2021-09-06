@@ -98,23 +98,24 @@ impl Cpu {
         self.halted = false;
 
         if !self.interrupts {
+            //println!("Interrupt disabled {:?}", int);
             return false;
         }
 
-        let targetpc;
+        //println!("Interrupt enabled {:?}", int);
 
-        match int {
+        let targetpc = match int {
             interrupt::Interrupt::VBlank => {
-                targetpc = 0x0040;
+                0x0040
             }
             interrupt::Interrupt::LcdStat => {
-                targetpc = 0x0048;
+                0x0048
             }
             interrupt::Interrupt::Timer => {
-                targetpc = 0x0050;
+                0x0050
             }
             interrupt::Interrupt::Joypad => {
-                targetpc = 0x0060;
+                0x0060
             }
         };
 
@@ -255,6 +256,13 @@ impl Cpu {
     }
 
     pub fn halt(&mut self) {
+        if !self.interrupts {
+            // TODO is this valid?
+            //panic!("Halted with interrupts disabled");
+            println!("Halt w/ interrupts disabled");
+            return;
+        }
+
         self.halted = true;
     }
 
