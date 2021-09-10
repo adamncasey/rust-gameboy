@@ -68,6 +68,10 @@ impl Cpu {
     }
 
     pub fn cycle(&mut self, mem: &mut Memory, debug: bool) -> u8 {
+        if self.pc == 0xC303 {
+            println!("Got here");
+        }
+
         if self.halted {
             return 8;
         }
@@ -76,10 +80,6 @@ impl Cpu {
 
         if debug {
             println!("Instruction: {:?}", &instr);
-        }
-
-        if self.pc == 0xC6B8 {
-            //println!("Got here");
         }
 
         let cycles = instr.execute(self, mem);

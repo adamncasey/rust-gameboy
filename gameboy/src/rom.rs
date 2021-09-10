@@ -134,7 +134,16 @@ impl Cartridge {
 
     pub fn mbc_write(&mut self, addr: u16, val: u8) {
         match self.mbc_type {
-            MbcType::None => {},
+            MbcType::None => {
+                match addr {
+                    0xA000..=0xBFFF => {
+                        let ram_offset = self.mbc_type.ram_banked_offset(addr);
+                        //println!("Write RAM {:4x}", ram_offset);
+                        self.ram[ram_offset] = val;
+                    }
+                    _ => {}
+                }
+            },
             MbcType::Mbc1 { ref mut rom_bank, ref mut ram_bank } => {
                 match addr {
                     0x0000..=0x1fff => {
@@ -161,6 +170,11 @@ impl Cartridge {
                         
                         //println!("Set RAM Bank to {}", bank);
                     },
+                    0xA000..=0xBFFF => {
+                        let ram_offset = self.mbc_type.ram_banked_offset(addr);
+                        //println!("Write RAM {:4x}", ram_offset);
+                        self.ram[ram_offset] = val;
+                    }
                     _ => {}
                 };
             },
@@ -187,20 +201,26 @@ impl Cartridge {
                         
                         println!("Set RAM Bank to {}", bank);
                     },
+                    0xA000..=0xBFFF => {
+                        let ram_offset = self.mbc_type.ram_banked_offset(addr);
+                        //println!("Write RAM {:4x}", ram_offset);
+                        self.ram[ram_offset] = val;
+                    }
                     _ => {}
                 };
             }
         };
     }
-
+/*
     pub fn mbc_rom_mut(&mut self, addr: u16) -> &mut u8 {
         match addr {
             0x0000..=0x3FFF => {
-                //println!("Writing to ROM? {:4x}", addr);
+                println!("Writing to ROM? {:4x}", addr);
                 &mut self.unused
             }
             0x4000..=0x7FFF => {
-                &mut self.rom_contents[self.mbc_type.rom_banked_offset(addr)]
+                &mut
+                //&mut self.rom_contents[self.mbc_type.rom_banked_offset(addr)]
             }
             0xA000..=0xBFFF => {
                 let ram_offset = self.mbc_type.ram_banked_offset(addr);
@@ -212,7 +232,7 @@ impl Cartridge {
             }
         }
     }
-
+*/
     pub fn mbc(&self, addr: u16) -> &u8 {
         match addr {
             0x0000..=0x3FFF => &self.rom_contents[addr as usize],

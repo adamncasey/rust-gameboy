@@ -64,12 +64,6 @@ impl Memory {
         }
     }
 
-    pub fn set(&mut self, addr: u16, val: u8) {
-        *self.mmu_mut(addr) = val;
-
-        self.special(addr, val);
-    }
-
     pub fn get16(&self, addr: u16) -> u16 {
         let low: u8 = self.get(addr);
         let high: u16 = u16::from(self.get(addr + 1));
@@ -83,21 +77,6 @@ impl Memory {
 
         self.set(addr, low as u8);
         self.set(addr + 1, high as u8);
-    }
-
-    fn mmu_mut(&mut self, addr: u16) -> &mut u8 {
-        match addr {
-            0x0000..=0x7FFF => self.cartridge.mbc_rom_mut(addr),
-            0x8000..=0x9FFF => &mut self.vram[(addr - 0x8000) as usize],
-            0xA000..=0xBFFF => self.cartridge.mbc_rom_mut(addr),
-            0xC000..=0xDFFF => &mut self.ram[(addr - 0xC000) as usize],
-            0xE000..=0xFDFF => &mut self.ram[(addr - 0xE000) as usize],
-            0xFE00..=0xFE9F => &mut self.sprite[(addr - 0xFE00) as usize],
-            0xFEA0..=0xFEFF => &mut self.unused,
-            0xFF00..=0xFF4B => &mut self.io[(addr - 0xFF00) as usize],
-            0xFF4C..=0xFF7F => &mut self.unused,
-            0xFF80..=0xFFFF => &mut self.highram[(addr - 0xFF80) as usize],
-        }
     }
 
     fn mmu(&self, addr: u16) -> &u8 {
@@ -115,17 +94,16 @@ impl Memory {
         }
     }
 
-    fn special(&mut self, addr: u16, val: u8) {
+    pub fn set(&mut self, addr: u16, val: u8) {
         match addr {
-            0x0000..=0x7FFF => {
-                self.cartridge.mbc_write(addr, val);
-            }
-            0xA000..=0xBFFF => {
-                self.cartridge.mbc_write(addr, val);
-            }
-            0xFF00 => {
-                self.input.update(val);
-            }
+            0x0000..=0x7FFF => self.cartridge.mbc_write(addr, val),
+            0x8000..=0x9FFF => self.vram[(addr - 0x8000) as usize] = val,
+            0xA000..=0xBFFF => self.cartridge.mbc_write(addr, val),
+            0xC000..=0xDFFF => self.ram[(addr - 0xC000) as usize] = val,
+            0xE000..=0xFDFF => self.ram[(addr - 0xE000) as usize] = val,
+            0xFE00..=0xFE9F => self.sprite[(addr - 0xFE00) as usize] = val,
+            0xFEA0..=0xFEFF => {}, // unused
+            0xFF00 => self.input.update(val),
             0xFF01 => {
                 self.serial_buf.push(val);
 
@@ -137,12 +115,9 @@ impl Memory {
                     self.serial_buf.clear();
                 }
             }
-            0xFF04..=0xFF07 => {
-                self.timer.write(addr, val);
-            }
-            0xFF07 => {
-                println!("Wrote IF {:2x}", val);
-            }
+            0xFF02..=0xFF03 => {}, // unimplemented
+            0xFF04..=0xFF06 => self.timer.write(addr, val),
+            0xFF00..=0xFF45 | 0xFF47..=0xFF4B => self.io[(addr - 0xFF00) as usize] = val,
             0xFF46 => {
                 // OAM Write
                 // TODO SLOW This could be a lot faster
@@ -153,10 +128,12 @@ impl Memory {
                     self.set(target + i, val);
                 }
             },
+            0xFF4C => {},
             0xFF4D => {
-                println!("Speed")
+                println!("Speed");
             }
-            _ => (),
+            0xFF4E..=0xFF7F => {},
+            0xFF80..=0xFFFF => self.highram[(addr - 0xFF80) as usize] = val,
         }
     }
 

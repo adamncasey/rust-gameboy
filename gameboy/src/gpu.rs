@@ -269,7 +269,7 @@ fn draw_background(
         return;
     }
 
-    let bgy: u16 = u16::from(line.wrapping_add(scroll_y)) - offset_y as u16;
+    let bgy: u16 = ((u16::from(line) + u16::from(scroll_y)) % GB_VSIZE as u16) - offset_y as u16;
     let vtile = bgy / 8;
 
     if vtile >= 32 {
@@ -284,10 +284,10 @@ fn draw_background(
             continue;
         }
 
-        let bgx = ((i as u16) + u16::from(scroll_x)) % 256 - offset_x as u16;
+        let bgx = ((i as u16) + u16::from(scroll_x)) % GB_HSIZE as u16 - offset_x as u16;
         let htile = bgx / 8;
         if htile >= 32 {
-            return;
+            continue;
         }
 
         let tx: u8 = (bgx % 8) as u8;
@@ -332,21 +332,20 @@ fn draw_sprites(
         let s = load_sprite(mem, i, palettes);
 
         if !sprite_in_row(line, s.y, sprite_height) || !sprite_on_disp(s.x) {
-            ////println!("Skipping sprite y line{} s{} y{} x{}", line, i, s.y, s.x);
             continue;
         }
 
         // look up tile pixel data
-        let mut ty: u8 = ((s.y - u16::from(line) as i16).abs() % 8) as u8;
+        let mut ty: u8 = (i16::from(line) - s.y) as u8;
 
         if s.yflip {
             debug.yflipped_sprite_lines += 1;
-            ty = sprite_height - ty;
+            ty = sprite_height - ty - 1;
+            //println!("y flip");
         }
 
         let mut drawn = false;
 
-        // TODO xflip:
         for px in 0..8 {
             let x = s.x + px;
             if x < 0 || x > GB_HSIZE as i16 {
@@ -366,7 +365,8 @@ fn draw_sprites(
 
             let tx = if s.xflip {
                 debug.xflipped_sprite_lines += 1;
-                8 - px
+                //println!("x flip");
+                7 - px
             } else {
                 px
             };
@@ -415,7 +415,7 @@ fn load_sprite(mem: &Memory, num: u16, palettes: (u8, u8)) -> Sprite {
         tile: mem.get(addr + 2),
         priority: options & 0b100_0000 == 0,
         yflip: options & 0b10_0000 != 0,
-        xflip: options & 0b1_0000 != 0,
+        xflip: options & 0b01_0000 != 0,
         palette: if options & 0b1000 != 0 {
             palettes.1
         } else {
@@ -428,7 +428,7 @@ fn sprite_in_row(line: u8, sy: i16, height: u8) -> bool {
     let line = i32::from(line);
     let sy = i32::from(sy);
 
-    sy < line && (sy + i32::from(height)) > line
+    sy <= line && (sy + i32::from(height)) > line
 }
 
 fn sprite_on_disp(sx: i16) -> bool {
@@ -519,5 +519,7 @@ mod tests {
         assert!(!sprite_in_row(0, -8, 8));
 
         assert!(!sprite_in_row(0, 32767, 8));
+
+        assert!(sprite_in_row(0, 0, 16));
     }
 }
